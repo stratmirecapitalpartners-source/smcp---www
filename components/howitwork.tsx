@@ -1,12 +1,51 @@
 import React from 'react'
+import { NewButton } from './ui/new-button'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
+import LoanSelectionModal from './LoanPopup'
 
 const Howitwork = () => {
+    const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
+    const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
+    const router = useRouter();
+    const supabase = createClient();
+    const [isRouting, setIsRouting] = useState(false);
+
+    const handleScenarioClick = async () => {
+        setIsRouting(true);
+
+        // 1. Check if they are logged in at all
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            // Not logged in -> Send to partner login
+            router.push('/become-partner/login');
+            return;
+        }
+
+        // 2. If logged in, check their partner approval status
+        const { data: partner } = await supabase
+            .from('loan_partners')
+            .select('status')
+            .eq('email', user.email)
+            .single();
+
+        // 3. Execute final routing based on database status
+        if (partner?.status === 'APPROVED') {
+            router.push('/partner/dashboard'); // Where the scenario form lives
+        } else {
+            router.push('/become-partner'); // Not approved or doesn't exist
+        }
+
+        setIsRouting(false);
+    };
     return (
         <>
             <section className="py-24 bg-white">
                 <div className="max-w-7xl mx-auto px-8">
                     <div className="text-center mb-16">
-                        <span className="text-secondary font-headline font-bold tracking-widest text-[10px] uppercase mb-4 block">HOW IT WORKS</span>
+                        {/* <span className="text-secondary font-headline font-bold tracking-widest text-[10px] uppercase mb-4 block">HOW IT WORKS</span> */}
                         <h2 className="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight">Our 4 Steps Process</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -48,12 +87,20 @@ const Howitwork = () => {
                         </div>
                     </div>
                     <div className="mt-16 text-center">
-                        <button className="bg-primary text-white px-10 py-5 font-headline font-bold text-xs uppercase tracking-widest rounded-md hover:brightness-110 shadow-lg">
+                        <NewButton variant="primary"
+                            onClick={() => setIsLoanModalOpen(true)}
+                        >
                             Get Approved
-                        </button>
+                        </NewButton>
                     </div>
                 </div>
             </section>
+
+            <LoanSelectionModal
+                isOpen={isLoanModalOpen}
+                onClose={() => setIsLoanModalOpen(false)}
+            />
+
         </>
     )
 }

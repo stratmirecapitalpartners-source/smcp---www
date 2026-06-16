@@ -8,6 +8,7 @@ import {
     Target, TrendingUp, Globe, Briefcase,
     ChevronRight, CheckCircle2
 } from 'lucide-react';
+import { NewButton } from '@/components/ui/new-button';
 
 export default function AboutPage() {
     return (
@@ -41,15 +42,15 @@ export default function AboutPage() {
             </section>
 
             {/* 2. STATS BANNER (OVERLAPPING HERO) */}
-            <section className="relative z-20 -mt-12 max-w-6xl mx-auto px-6 lg:px-8">
-                <div className="bg-white rounded-2xl shadow-2xl shadow-brand-dark/10 border border-slate-100 p-8 md:p-12">
+            <section className="relative z-20 -mt-12 max-w-6xl mx-auto px-6 lg:px-8 ">
+                <div className="bg-white rounded-2xl shadow-2xl shadow-brand-dark/10  border border-slate-100 p-8 md:p-12">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x-0 md:divide-x divide-slate-100">
-                        <div className="text-center px-4 mb-6 md:mb-0">
+                        {/* <div className="text-center px-4 mb-6 md:mb-0">
                             <h4 className="text-4xl font-black text-primary mb-2">$4.2B+</h4>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Capital Deployed</p>
-                        </div>
+                        </div> */}
                         <div className="text-center px-4 mb-6 md:mb-0">
-                            <h4 className="text-4xl font-black text-primary mb-2">450+</h4>
+                            <h4 className="text-4xl font-black text-primary mb-2">500+</h4>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Institutional Partners</p>
                         </div>
                         <div className="text-center px-4 mb-6 md:mb-0">
@@ -57,7 +58,7 @@ export default function AboutPage() {
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Years Experience</p>
                         </div>
                         <div className="text-center px-4">
-                            <h4 className="text-4xl font-black text-primary mb-2">50</h4>
+                            <h4 className="text-4xl font-black text-primary mb-2">40</h4>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">States Covered</p>
                         </div>
                     </div>
@@ -116,13 +117,13 @@ export default function AboutPage() {
             </section>
 
             {/* 4. BENTO GRID: OUR MISSION & VALUES */}
-            <section className="py-24 bg-slate-50 border-t border-slate-100">
+            <section className="py-24 bg-secondary rouded-xl">
                 <div className="max-w-7xl mx-auto px-6 lg:px-8">
                     <div className="mb-16">
-                        <h2 className="text-3xl md:text-5xl font-bold text-brand-dark tracking-tight font-headline">
+                        <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight font-headline">
                             Engineered for <span className="text-primary">Growth.</span>
                         </h2>
-                        <p className="mt-4 text-lg text-slate-600 max-w-2xl">
+                        <p className="mt-4 text-lg text-white max-w-2xl">
                             Traditional financing moves too slowly and imposes rigid constraints. We were founded on a simple premise: capital should empower your business, not restrict it.
                         </p>
                     </div>
@@ -238,7 +239,7 @@ export default function AboutPage() {
 
                         <div className="h-full min-h-[400px] relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
                             <img
-                                src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+                                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop"
                                 alt="Business meeting signing contracts with architectural models"
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
@@ -248,7 +249,7 @@ export default function AboutPage() {
             </section>
 
             {/* 6. THE STRATMIRE ADVANTAGE (Checklist) */}
-            <section className="py-24 bg-slate-50 border-t border-slate-200">
+            <section className="py-24 bg-secondary rounded-xl">
                 <div className="max-w-7xl mx-auto px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <div className="relative hidden md:block">
@@ -264,10 +265,10 @@ export default function AboutPage() {
                         </div>
 
                         <div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark tracking-tight font-headline mb-8">
+                            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight font-headline mb-8">
                                 The Stratmire Advantage
                             </h2>
-                            <div className="space-y-6">
+                            <div className="space-y-6 text-white">
                                 {[
                                     "No upfront fees or hidden underwriting costs.",
                                     "Direct access to decision-makers and senior underwriters.",
@@ -279,7 +280,7 @@ export default function AboutPage() {
                                         <div className="mt-1 shrink-0">
                                             <CheckCircle2 className="text-secondary" size={24} />
                                         </div>
-                                        <p className="text-lg text-slate-700 font-medium">{item}</p>
+                                        <p className="text-lg text-white font-medium">{item}</p>
                                     </div>
                                 ))}
                             </div>
@@ -294,9 +295,9 @@ export default function AboutPage() {
             </section>
 
             {/* 7. CONTACT / CTA SECTION */}
-            <section className="py-24 bg-brand-dark relative overflow-hidden">
+            <section className="py-24">
                 <div className="absolute right-0 top-0 w-1/2 h-full opacity-10 pointer-events-none hidden lg:block">
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full text-white fill-current">
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full text-gray-900 fill-current">
                         <polygon points="100,0 0,100 100,100" />
                     </svg>
                 </div>
@@ -304,31 +305,33 @@ export default function AboutPage() {
                 <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <div>
-                            <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-headline mb-6">
+                            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight font-headline mb-6">
                                 Ready to accelerate <br /><span className="text-secondary">your timeline?</span>
                             </h2>
-                            <p className="text-lg text-slate-300 mb-10 max-w-md">
+                            <p className="text-lg text-gray-900 mb-10 max-w-md">
                                 Speak directly with an underwriter or submit your scenario securely through our vault to get started.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <Link
-                                    href="/userjourney"
-                                    className="bg-primary hover:bg-[#2a62a3] text-white px-8 py-4 rounded-xl font-bold text-center transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                                >
-                                    Apply Now <ArrowRight size={18} />
-                                </Link>
-                                <Link
-                                    href="/become-partner"
-                                    className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-xl font-bold text-center transition-colors"
-                                >
-                                    Become a Partner
-                                </Link>
+                                <NewButton variant="primary">
+                                    <Link
+                                        href="/userjourney"
+                                    >
+                                        Apply Now
+                                    </Link>
+                                </NewButton>
+                                <NewButton variant="secondary">
+                                    <Link
+                                        href="/become-partner/team"
+                                    >
+                                        Become a Partner
+                                    </Link>
+                                </NewButton>
                             </div>
                         </div>
 
-                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl">
-                            <h3 className="text-2xl font-bold text-white mb-8 font-headline">Corporate Headquarters</h3>
+                        <div className="bg-white border border-slate-100 rounded-3xl p-8 md:p-10 shadow-2xl">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-8 font-headline">Corporate Headquarters</h3>
 
                             <div className="space-y-8">
                                 <div className="flex items-start gap-5 group">
@@ -336,8 +339,8 @@ export default function AboutPage() {
                                         <MapPin className="text-secondary" size={24} />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white text-lg">Stratmire Capital Partners LLC</p>
-                                        <p className="mt-2 text-slate-300 leading-relaxed">3020 West New Haven Avenue<br />Suite 133<br />Melbourne, FL 32904</p>
+                                        <p className="font-bold text-gray-900 text-lg">Stratmire Capital Partners LLC</p>
+                                        <p className="mt-2 text-gray-900 leading-relaxed">3020 West New Haven Avenue<br />Suite 133<br />Melbourne, FL 32904</p>
                                     </div>
                                 </div>
 
@@ -345,18 +348,18 @@ export default function AboutPage() {
                                     <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-secondary/20 transition-colors">
                                         <Phone className="text-secondary" size={24} />
                                     </div>
-                                    <a href="tel:855-202-1312" className="text-lg text-slate-300 hover:text-white transition-colors">855-202-1312</a>
+                                    <a href="tel:855-202-1312" className="text-lg text-gray-900 hover:text-gray-900 transition-colors">855-202-1312</a>
                                 </div>
 
                                 <div className="flex items-center gap-5 group">
                                     <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-secondary/20 transition-colors">
                                         <Mail className="text-secondary" size={24} />
                                     </div>
-                                    <a href="mailto:contact@stratmirecapitalpartners.com" className="text-lg text-slate-300 break-all sm:break-normal hover:text-white transition-colors">contact@stratmirecapital.com</a>
+                                    <a href="mailto:info@stratmirecapitalpartners.com" className="text-lg text-gray-900 break-all sm:break-normal hover:text-gray-900 transition-colors">info@stratmirecapitalpartners.com</a>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>``
                 </div>
             </section>
 

@@ -96,7 +96,7 @@ export function LoginForm({
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-slate-700 font-bold">Password</Label>
                   <a
-                    href="#"
+                    href="/forgot-password"
                     className="text-sm font-medium text-[#0a6c50] hover:underline"
                   >
                     Forgot your password?
@@ -115,13 +115,13 @@ export function LoginForm({
               <Button formAction={login} type="submit" className="w-full py-6 text-lg font-bold bg-[#0a6c50] hover:bg-[#085a42] text-white transition-colors mt-2">
                 Login
               </Button>
-
+              {/* 
               <FieldSeparator className="text-slate-400 font-medium">
                 Or continue with
-              </FieldSeparator>
+              </FieldSeparator> */}
 
               {/* SOCIAL LOGINS */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* <div className="grid grid-cols-3 gap-4">
                 <Button variant="outline" type="button" className="py-6 border-slate-200 hover:bg-slate-50">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5 text-slate-700">
                     <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" fill="currentColor" />
@@ -140,7 +140,7 @@ export function LoginForm({
                   </svg>
                   <span className="sr-only">Login with Meta</span>
                 </Button>
-              </div>
+              </div> */}
 
               <div className="text-center mt-2">
                 <span className="text-slate-500 font-medium">Don&apos;t have an account? </span>
@@ -167,8 +167,8 @@ export function LoginForm({
       </Card>
 
       <div className="px-6 text-center text-sm text-slate-500 font-medium mt-4">
-        By clicking continue, you agree to our <a href="#" className="underline hover:text-slate-900">Terms of Service</a>{" "}
-        and <a href="#" className="underline hover:text-slate-900">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="terms" className="underline hover:text-slate-900">Terms of Service</a>{" "}
+        and <a href="privacy" className="underline hover:text-slate-900">Privacy Policy</a>.
       </div>
     </div>
   )

@@ -34,7 +34,7 @@ const Mainherov0 = () => {
 
     // 3. Execute final routing based on database status
     if (partner?.status === 'APPROVED') {
-      router.push('/partner/dashboard'); // Where the scenario form lives
+      router.push('/partner/dealform'); // Where the scenario form lives
     } else {
       router.push('/become-partner'); // Not approved or doesn't exist
     }

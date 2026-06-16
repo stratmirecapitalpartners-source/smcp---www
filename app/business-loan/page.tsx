@@ -120,7 +120,7 @@ export default function BusinessLoanPage() {
         <div className="max-w-5xl mx-auto py-10 px-6">
             <header className="mb-12">
                 <h1 className="font-headline text-5xl font-extrabold text-primary tracking-tight leading-tight">
-                    Commercial Funding
+                    Business Funding
                 </h1>
                 <p className="mt-6 text-on-surface-variant text-lg max-w-xl leading-relaxed">
                     Check your eligibility in 60 seconds. Provide your business details below to secure your financing.

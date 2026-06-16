@@ -55,22 +55,22 @@ export function SignupForm({
                 <Field className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input 
-                      id="password" 
+                    <Input
+                      id="password"
                       name="password" // CRITICAL: Required for FormData
-                      type="password" 
-                      required 
+                      type="password"
+                      required
                     />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirm-password">
                       Confirm Password
                     </FieldLabel>
-                    <Input 
-                      id="confirm-password" 
+                    <Input
+                      id="confirm-password"
                       name="confirmPassword" // CRITICAL: Required for validation
-                      type="password" 
-                      required 
+                      type="password"
+                      required
                     />
                   </Field>
                 </Field>
@@ -84,7 +84,7 @@ export function SignupForm({
                   Create Account
                 </Button>
               </Field>
-              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+              {/* <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
               </FieldSeparator>
               <Field className="grid grid-cols-3 gap-4">
@@ -106,7 +106,7 @@ export function SignupForm({
                   </svg>
                   <span className="sr-only">Sign up with Meta</span>
                 </Button>
-              </Field>
+              </Field> */}
               <FieldDescription className="text-center">
                 Already have an account?{" "}
                 <Link href="/login" className="underline hover:text-primary transition-colors">
@@ -115,18 +115,15 @@ export function SignupForm({
               </FieldDescription>
             </FieldGroup>
           </form>
-          <div className="relative hidden bg-muted md:block">
-            <img
-              src="/placeholder.svg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-            />
+          <div
+            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1200&auto=format&fit=crop")' }}
+            className="relative hidden bg-muted md:block">
           </div>
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="terms">Terms of Service</a>{" "}
+        and <a href="privacy">Privacy Policy</a>.
       </FieldDescription>
     </div>
   )

@@ -5,6 +5,7 @@ import {
     ArrowRight, Building2, Landmark, LineChart,
     Briefcase, Handshake, Zap, ShieldCheck, Target, ChevronRight
 } from 'lucide-react';
+import { NewButton } from '@/components/ui/new-button';
 
 export default function BusinessServicesPage() {
     const services = [
@@ -168,7 +169,7 @@ export default function BusinessServicesPage() {
             </section>
 
             {/* 4. CALL TO ACTION SECTION */}
-            <section className="py-24 bg-brand-dark relative overflow-hidden">
+            <section className="py-24 ">
                 <div className="absolute left-0 top-0 w-1/2 h-full opacity-10 pointer-events-none hidden lg:block">
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full text-white fill-current transform -scale-x-100">
                         <polygon points="100,0 0,100 100,100" />
@@ -176,30 +177,32 @@ export default function BusinessServicesPage() {
                 </div>
 
                 <div className="max-w-4xl mx-auto px-6 lg:px-8 relative z-10 text-center">
-                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight font-headline mb-6">
+                    <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight font-headline mb-6">
                         Fuel Your Next Big Move
                     </h2>
-                    <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto">
+                    <p className="text-lg text-gray-900 mb-10 max-w-2xl mx-auto">
                         Whether you are expanding operations or acquiring new assets, our commercial underwriters are ready to structure your capital solution.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Link
-                            href="/userjourney"
-                            className="bg-primary hover:bg-[#2a62a3] text-white px-10 py-5 rounded-xl font-bold text-center transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20 text-lg"
-                        >
-                            Apply for Business Funding <ArrowRight size={20} />
-                        </Link>
-                        <Link
-                            href="/about"
-                            className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-10 py-5 rounded-xl font-bold text-center transition-colors flex items-center justify-center text-lg gap-2"
-                        >
-                            Learn More About Us <ChevronRight size={20} />
-                        </Link>
+                        <NewButton variant="primary">
+                            <Link
+                                href="/business-loan"
+                            >
+                                Apply for Business Funding
+                            </Link>
+                        </NewButton>
+                        <NewButton variant='secondary'>
+                            <Link
+                                href="/about"
+                            >
+                                Learn More About Us
+                            </Link>
+                        </NewButton>
                     </div>
                 </div>
-            </section>
+            </section >
 
-        </div>
+        </div >
     );
 }

@@ -2,6 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/login/action'
+import { NewButton } from './ui/new-button'
 
 // Upgrade to an async Server Component
 export default async function Navbar() {
@@ -18,40 +19,36 @@ export default async function Navbar() {
               <img
                 src="/stratmire_logo.png"
                 alt="Stratmire Logo"
-                className="w-70 object-contain"
+                className="w-100 object-contain"
               />
             </div>
           </Link>
 
           <nav className="hidden md:flex gap-4 items-center">
             <div className="hidden lg:flex items-center gap-8">
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/">Home</Link>
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/about">About Us</Link>
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/loanprogram">Loan Programs</Link>
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/become-partner/team">Become a Partner</Link>
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/mortgagecalc">Mortgage Calculator</Link>
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/business-service">Business Services</Link>
-              <Link className="text-slate-300/80 hover:text-white transition-colors font-headline font-bold tracking-tight text-sm uppercase" href="/contact">Contact Us</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/">Home</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/about">About Us</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/loanprogram">Loan Programs</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/become-partner/team">Become a Partner</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/mortgagecalc">Mortgage Calculator</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/business-service">Business Services</Link>
+              <Link className="text-gray-900 hover:text-primary hover:underline transition-colors font-headline font-extrabold tracking-tight text-sm uppercase" href="/contact">Contact Us</Link>
             </div>
           </nav>
 
           {/* 2. Conditional Rendering based on Server-Side Auth State */}
           {user ? (
             <form action={logout}>
-              <button
-                type="submit"
-                className="bg-white text-primary px-7 py-3 font-headline font-bold text-[13px] uppercase tracking-widest rounded-md hover:bg-opacity-90 transition-all shadow-md"
-              >
+              <NewButton variant="primary" type="submit">
                 Log out
-              </button>
+              </NewButton>
             </form>
           ) : (
-            <Link
-              href="/login"
-              className="bg-white text-primary px-7 py-3 font-headline font-bold text-[13px] uppercase tracking-widest rounded-md hover:bg-opacity-90 transition-all shadow-md"
-            >
-              Account Login
-            </Link>
+            <NewButton variant="secondary" asChild>
+              <Link href="/login">
+                Account Login
+              </Link>
+            </NewButton>
           )}
 
         </div>

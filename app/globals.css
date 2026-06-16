@@ -26,9 +26,9 @@
   --radius-full: 9999px;
 
   /* Primary Brand Colors */
-  --color-primary: #3778C2;
+  --color-primary: #1C75BC;
   --color-on-primary: #ffffff;
-  --color-primary-container: #0a5240;
+  --color-primary-container: #ffffff;
   /* 0ba146 */
   --color-on-primary-container: #c4ebde;
   --color-primary-fixed: #c4ebde;
@@ -38,7 +38,7 @@
   --color-inverse-primary: #a8cfc2;
 
   /* Secondary Brand Colors */
-  --color-secondary: #67BB4F;
+  --color-secondary: #39B54A;
   --color-on-secondary: #ffffff;
   --color-secondary-container: #68fadd;
   --color-on-secondary-container: #007261;

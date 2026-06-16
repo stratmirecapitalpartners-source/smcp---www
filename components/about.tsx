@@ -7,8 +7,8 @@ const About = () => {
                 <div className="max-w-7xl mx-auto px-8">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-16 items-center">
                         <div className="md:col-span-12 text-center mb-4">
-                            <span className="text-secondary font-headline font-bold tracking-[0.2em] text-xs uppercase mb-4 block">Stratmire Capital</span>
-                            <h2 className="text-3xl md:text-5xl font-headline font-extrabold text-primary tracking-tight leading-tight max-w-4xl mx-auto">
+                            <span className="text-secondary font-black tracking-[0.2em] text-3xl uppercase mb-4 block">Stratmire Capital</span>
+                            <h2 className="text-2xlxl md:text-2xl font-headline font-extrabold text-primary tracking-tight leading-tight max-w-4xl mx-auto">
                                 Empowering Businesses and Investors Through Tailored Capital Solutions
                             </h2>
                         </div>

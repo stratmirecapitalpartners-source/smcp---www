@@ -10,7 +10,7 @@ interface MeetingSelectionModalProps {
 
 export default function MeetingSelectionModal({ isOpen, onClose }: MeetingSelectionModalProps) {
 
-    // 1. HOOKS ALWAYS GO FIRST (Before any conditional returns)
+    // 1. Initialize UI styles on load
     useEffect(() => {
         (async function () {
             const cal = await getCalApi({ "namespace": "15min" });
@@ -18,10 +18,19 @@ export default function MeetingSelectionModal({ isOpen, onClose }: MeetingSelect
         })();
     }, []);
 
-    // 2. NOW we can safely exit if the modal is closed
     if (!isOpen) return null;
 
-    // 3. RENDER THE UI
+    // 2. Programmatic handler that forces Cal.com to open reliably
+    const handleScheduleMeet = async () => {
+        const cal = await getCalApi({ "namespace": "15min" });
+        cal("modal", {
+            // action: "open",
+            calLink: "roney-gajjar-qbehlx/15min",
+            config: { "layout": "month_view", "useSlotsViewOnSmallScreen": "true" }
+        });
+        onClose(); // Closes the Stratmire modal smoothly right as the calendar appears
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div
@@ -67,17 +76,14 @@ export default function MeetingSelectionModal({ isOpen, onClose }: MeetingSelect
                     >
                         <Phone size={32} strokeWidth={1.5} className="shrink-0 text-emerald-400 group-hover:scale-110 transition-transform duration-300" />
                         <div className="text-left">
-                            <span className="block text-xl font-bold leading-tight">Telephonic</span>
+                            <span className="block text-xl font-bold leading-tight">Telephone</span>
                             <span className="block text-sm text-emerald-100/70 mt-1">Call us instantly at 855-202-1312</span>
                         </div>
                     </a>
 
-                    {/* OPTION 3: CAL.COM INTEGRATION */}
+                    {/* OPTION 3: CAL.COM INTEGRATION (FIXED) */}
                     <button
-                        data-cal-namespace="15min"
-                        data-cal-link="roney-gajjar-qbehlx/15min"
-                        data-cal-config='{"layout":"month_view","useSlotsViewOnSmallScreen":"true"}'
-                        onClick={onClose}
+                        onClick={handleScheduleMeet}
                         className="w-full flex items-center gap-5 bg-[#0a251e] hover:bg-[#123d32] text-white p-6 rounded-xl transition-all shadow-md group"
                     >
                         <Calendar size={32} strokeWidth={1.5} className="shrink-0 text-emerald-400 group-hover:scale-110 transition-transform duration-300" />
