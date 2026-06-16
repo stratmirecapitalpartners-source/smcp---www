@@ -56,7 +56,7 @@ const Howitwork = () => {
                                 <span className="material-symbols-outlined text-3xl">assignment</span>
                             </div>
                             <h4 className="font-headline font-extrabold text-sm text-primary mb-4 uppercase tracking-wider">Loan Application</h4>
-                            <p className="font-body text-xs leading-relaxed text-gray-600">Begin your journey through our encrypted portal with a high-level summary.</p>
+                            <p className="font-body text-xs leading-relaxed text-gray-600">Complete our streamlined application and submit the required documentation. Our team reviews your financing needs and identifies the most suitable lending options.</p>
                         </div>
                         {/* Step 2 */}
                         <div className="bg-surface p-10 text-center border border-slate-100 group rounded-md shadow-md">
@@ -64,8 +64,10 @@ const Howitwork = () => {
                             <div className="w-16 h-16 bg-white border border-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                                 <span className="material-symbols-outlined text-3xl">analytics</span>
                             </div>
-                            <h4 className="font-headline font-extrabold text-sm text-primary mb-4 uppercase tracking-wider">Analysis</h4>
-                            <p className="font-body text-xs leading-relaxed text-gray-600">Our expert analysts review your assets to engineer a bespoke solution.</p>
+                            <h4 className="font-headline font-extrabold text-sm text-primary mb-4 uppercase tracking-wider">Underwriting</h4>
+                            <p className="font-body text-xs leading-relaxed text-gray-600">Complete our streamlined application and submit the
+                                required documentation. Our team reviews your financing needs and identifies
+                                the most suitable lending options.</p>
                         </div>
                         {/* Step 3 */}
                         <div className="bg-surface p-10 text-center border border-slate-100 group rounded-md shadow-md">
@@ -74,7 +76,9 @@ const Howitwork = () => {
                                 <span className="material-symbols-outlined text-3xl">verified</span>
                             </div>
                             <h4 className="font-headline font-extrabold text-sm text-primary mb-4 uppercase tracking-wider">Loan Approval</h4>
-                            <p className="font-body text-xs leading-relaxed text-gray-600">Receive a formal commitment letter detailing your specific capital stack.</p>
+                            <p className="font-body text-xs leading-relaxed text-gray-600">Once underwriting is complete, qualified borrowers receive
+                                financing offers outlining loan amounts, rates, terms, and conditions. Our team
+                                helps you compare options and select the best solution.</p>
                         </div>
                         {/* Step 4 */}
                         <div className="bg-surface p-10 text-center border border-slate-100 group rounded-md shadow-md">
@@ -83,7 +87,9 @@ const Howitwork = () => {
                                 <span className="material-symbols-outlined text-3xl">account_balance</span>
                             </div>
                             <h4 className="font-headline font-extrabold text-sm text-primary mb-4 uppercase tracking-wider">Loan Funding</h4>
-                            <p className="font-body text-xs leading-relaxed text-gray-600">Swift deployment of capital directly into your accounts with zero friction.</p>
+                            <p className="font-body text-xs leading-relaxed text-gray-600">Once underwriting is complete, qualified borrowers receive
+                                financing offers outlining loan amounts, rates, terms, and conditions. Our team
+                                helps you compare options and select the best solution.</p>
                         </div>
                     </div>
                     <div className="mt-16 text-center">

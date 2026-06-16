@@ -1,20 +1,62 @@
 "use client"
-import { useRouter } from 'next/navigation'
-import React from 'react'
 import { ChevronDown, Zap, Star } from 'lucide-react'
+import React, { useState } from 'react'
+import LoanSelectionModal from '@/components/LoanPopup'
+import MeetingSelectionModal from '@/components/MeetingSelectionModal' // <-- Import the new modal
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 
 const Team = () => {
-    const router = useRouter()
+    // Setup separate states for both modals
+    const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
+    const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
+    const router = useRouter();
+    const supabase = createClient();
+    const [isRouting, setIsRouting] = useState(false);
+
+    const handleScenarioClick = async () => {
+        setIsRouting(true);
+
+        // 1. Check if they are logged in at all
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            // Not logged in -> Send to partner login
+            router.push('/become-partner/login');
+            return;
+        }
+
+        // 2. If logged in, check their partner approval status
+        const { data: partner } = await supabase
+            .from('loan_partners')
+            .select('status')
+            .eq('email', user.email)
+            .single();
+
+        // 3. Execute final routing based on database status
+        if (partner?.status === 'APPROVED') {
+            router.push('/partner/dealform'); // Where the scenario form lives
+        } else {
+            router.push('/become-partner'); // Not approved or doesn't exist
+        }
+
+        setIsRouting(false);
+    };
     return (
         <section className="bg-slate-50 py-32 px-4 sm:px-8 font-sans">
             <div className="max-w-7xl mx-auto">
 
                 <div className="text-center mb-16 space-y-4">
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                        Partner Compensation Tiers
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight uppercase text-secondary">
+                        Become a Partner
                     </h1>
-                    <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto">
-                        Choose the partnership level that aligns with your network size and production goals.
+                    <p className="text-lg text-slate-500 font-medium max-w-6xl mx-auto">
+                        Build predictable revenue by helping business owners and real estate investors access
+                        the capital they need to grow. Whether you&apos;re looking to generate additional income
+                        through referrals or build a scalable business with a team, Stratmire Capital Partners
+                        provides the platform, support, and lending network to help you succeed.
+                        <br />
+                        <span className='mt-4 block'>Choose the partnership level that aligns with your goals and income objectives.</span>
                     </p>
                 </div>
 
@@ -34,7 +76,8 @@ const Team = () => {
                                 </h2>
                             </div>
                             <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                                Tailored capital solutions for operational scaling and growth.
+                                Designed for professionals who want to focus on their own production and
+                                referral activity.
                             </p>
                         </div>
 
@@ -47,7 +90,8 @@ const Team = () => {
                                 </summary>
                                 <div className="px-5 pb-6">
                                     <p className="text-slate-600 font-medium text-sm leading-relaxed">
-                                        No upfront investment required.
+                                        Designed for individuals who want to generate personal production while
+                                        building and leading a team of Loan Partners.
                                     </p>
                                 </div>
                             </details>
@@ -130,7 +174,8 @@ const Team = () => {
                                 </h2>
                             </div>
                             <p className="text-emerald-50/80 font-medium text-lg leading-relaxed">
-                                Access premium capital solutions with dedicated support and team overrides.
+                                Designed for individuals who want to generate personal production while
+                                building and leading a team of Loan Partners.
                             </p>
                         </div>
 
@@ -216,6 +261,9 @@ const Team = () => {
                         </div>
                     </div>
 
+                </div>
+                <div className="text-center mt-16">
+                    <span className="text-slate-500 font-medium">Questions? Reach out to <a href="mailto:info@startmirecapitalpartners.com" className="text-[#0a6c50] hover:underline">info@startmirecapitalpartners.com</a>.</span>
                 </div>
             </div>
         </section>

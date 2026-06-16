@@ -44,16 +44,17 @@ export default function LoanPrograms() {
 
             {/* Left Side Content */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              <span className="text-teal-400 font-bold tracking-[0.2em] text-xs uppercase block">
+              {/* <span className="text-teal-400 font-bold tracking-[0.2em] text-xs uppercase block">
                 Institutional Grade Funding
-              </span>
-              <h1 className="text-white font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none">
-                The Modern Standard <br />
-                for <span className="text-teal-400 font-extrabold">Capital Placement.</span>
+              </span> */}
+              <h1 className="text-secondary font-black text-4xl sm:text-5xl md:text-6xl tracking-tight leading-none">
+                YOUR NEXT LOAN <br /> STARTS HERE
               </h1>
               <p className="text-emerald-50/70 font-medium text-base sm:text-lg max-w-xl leading-relaxed">
-                Strategic liquidity solutions for high-performance enterprises and
-                real estate visionaries. We provide the architecture for your growth.
+                At Stratmire Capital Partners LLC, we believe access to capital should be simple,
+                strategic, and tailored to the unique needs of every borrower. Whether you&apos;re a business
+                owner seeking growth capital or a real estate investor expanding your portfolio, our
+                mission is to connect you with the right financing solution quickly and efficiently.
               </p>
             </div>
 

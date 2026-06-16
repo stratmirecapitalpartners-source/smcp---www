@@ -7,10 +7,12 @@ const Footer = () => {
                 <div className="max-w-7xl mx-auto px-8">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
                         <div className="md:col-span-1">
-                            <div className="text-2xl font-black tracking-tighter font-headline mb-8 flex items-center gap-2">
-                                <span className="w-8 h-8 bg-white text-primary flex items-center justify-center rounded-md text-sm italic">S</span>
-                                STRATMIRE
-                            </div>
+                            <img
+                                src="/stratmire_logo.png"
+                                alt="Stratmire Logo"
+                                className="h-auto w-48"
+                            />
+
                             <p className="text-gray-900 text-sm leading-relaxed font-body">
                                 Premier nationwide loan brokerage providing high-velocity capital solutions for investors and businesses.
                             </p>

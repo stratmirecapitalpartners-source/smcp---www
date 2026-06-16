@@ -6,47 +6,122 @@ import {
     Briefcase, Handshake, Zap, ShieldCheck, Target, ChevronRight
 } from 'lucide-react';
 import { NewButton } from '@/components/ui/new-button';
+import { Button } from '@/components/ui/button';
 
 export default function BusinessServicesPage() {
+    // const services = [
+    //     {
+    //         title: "Commercial Real Estate Financing",
+    //         description: "From acquisition and development to refinancing existing properties, we provide tailored capital stacks for multi-family, retail, office, and industrial assets.",
+    //         icon: <Building2 size={28} className="text-brand-dark" strokeWidth={2} />,
+    //         color: "bg-secondary/90"
+    //     },
+    //     {
+    //         title: "Business Expansion Capital",
+    //         description: "Access high-leverage working capital and bridge loans designed to fund your next phase of growth, scale operations, or cover immediate cash-flow gaps.",
+    //         icon: <Zap size={28} className="text-white" strokeWidth={2} />,
+    //         color: "bg-primary"
+    //     },
+    //     {
+    //         title: "Mergers & Acquisitions (M&A)",
+    //         description: "Secure the necessary liquidity to execute strategic buyouts, partner buy-ins, or competitor acquisitions with our specialized corporate funding structures.",
+    //         icon: <Handshake size={28} className="text-brand-dark" strokeWidth={2} />,
+    //         color: "bg-secondary/90"
+    //     },
+    //     {
+    //         title: "Asset-Based Lending",
+    //         description: "Leverage your existing company assets—including accounts receivable, inventory, and heavy equipment—to unlock immediate, non-dilutive liquidity.",
+    //         icon: <Landmark size={28} className="text-white" strokeWidth={2} />,
+    //         color: "bg-primary"
+    //     },
+    //     {
+    //         title: "Strategic Financial Advisory",
+    //         description: "Beyond capital, our senior partners provide expert debt structuring, risk assessment, and long-term financial planning to optimize your balance sheet.",
+    //         icon: <LineChart size={28} className="text-brand-dark" strokeWidth={2} />,
+    //         color: "bg-secondary/90"
+    //     },
+    //     {
+    //         title: "Franchise & Equipment Funding",
+    //         description: "Rapidly scale your franchise footprint or upgrade critical operational technology and heavy machinery with specialized, fast-closing equipment finance.",
+    //         icon: <Briefcase size={28} className="text-white" strokeWidth={2} />,
+    //         color: "bg-primary"
+    //     }
+    // ];
     const services = [
+        // {
+        //     title: "Commercial Real Estate Financing",
+        //     description: "From acquisition and development to refinancing existing properties, we provide tailored capital stacks for multi-family, retail, office, and industrial assets.",
+        //     icon: <Building2 size={28} className="text-brand-dark" strokeWidth={2} />,
+        //     color: "bg-secondary/90"
+        // },
+        // {
+        //     title: "Business Expansion Capital",
+        //     description: "Access high-leverage working capital and bridge loans designed to fund your next phase of growth, scale operations, or cover immediate cash-flow gaps.",
+        //     icon: <Zap size={28} className="text-white" strokeWidth={2} />,
+        //     color: "bg-primary"
+        // },
+        // {
+        //     title: "Mergers & Acquisitions (M&A)",
+        //     description: "Secure the necessary liquidity to execute strategic buyouts, partner buy-ins, or competitor acquisitions with our specialized corporate funding structures.",
+        //     icon: <Handshake size={28} className="text-brand-dark" strokeWidth={2} />,
+        //     color: "bg-secondary/90"
+        // },
+        // {
+        //     title: "Asset-Based Lending",
+        //     description: "Leverage your existing company assets—including accounts receivable, inventory, and heavy equipment—to unlock immediate, non-dilutive liquidity.",
+        //     icon: <Landmark size={28} className="text-white" strokeWidth={2} />,
+        //     color: "bg-primary"
+        // },
+        // {
+        //     title: "Strategic Financial Advisory",
+        //     description: "Beyond capital, our senior partners provide expert debt structuring, risk assessment, and long-term financial planning to optimize your balance sheet.",
+        //     icon: <LineChart size={28} className="text-brand-dark" strokeWidth={2} />,
+        //     color: "bg-secondary/90"
+        // },
+        // {
+        //     title: "Franchise & Equipment Funding",
+        //     description: "Rapidly scale your franchise footprint or upgrade critical operational technology and heavy machinery with specialized, fast-closing equipment finance.",
+        //     icon: <Briefcase size={28} className="text-white" strokeWidth={2} />,
+        //     color: "bg-primary"
+        // },
+
         {
-            title: "Commercial Real Estate Financing",
-            description: "From acquisition and development to refinancing existing properties, we provide tailored capital stacks for multi-family, retail, office, and industrial assets.",
-            icon: <Building2 size={28} className="text-brand-dark" strokeWidth={2} />,
+            title: "Business Formation & Registration",
+            description: "Start your business with confidence. We assist entrepreneurs with business entity formation, state registration, EIN acquisition guidance, and foundational business setup services.",
+            icon: < Handshake size={28} className="text-brand-dark" strokeWidth={2} />,
             color: "bg-secondary/90"
         },
         {
-            title: "Business Expansion Capital",
-            description: "Access high-leverage working capital and bridge loans designed to fund your next phase of growth, scale operations, or cover immediate cash-flow gaps.",
+            title: "Merchant Services & Credit Card Processing",
+            description: "Access reliable payment processing solutions designed to help businesses accept credit cards, debit cards, mobile payments, and online transactions while improving cash flow and customer convenience.",
             icon: <Zap size={28} className="text-white" strokeWidth={2} />,
             color: "bg-primary"
         },
         {
-            title: "Mergers & Acquisitions (M&A)",
-            description: "Secure the necessary liquidity to execute strategic buyouts, partner buy-ins, or competitor acquisitions with our specialized corporate funding structures.",
+            title: "Business Tax Preparation",
+            description: "Stay compliant and organized with professional business tax preparation services for corporations, partnerships, LLCs, and sole proprietorships.",
             icon: <Handshake size={28} className="text-brand-dark" strokeWidth={2} />,
             color: "bg-secondary/90"
         },
         {
-            title: "Asset-Based Lending",
-            description: "Leverage your existing company assets—including accounts receivable, inventory, and heavy equipment—to unlock immediate, non-dilutive liquidity.",
+            title: "Tax Planning Strategies",
+            description: "Reduce tax liabilities and maximize profitability through proactive tax planning. Our network of tax professionals can help identify strategies that support your business and financial goals.",
             icon: <Landmark size={28} className="text-white" strokeWidth={2} />,
             color: "bg-primary"
         },
         {
-            title: "Strategic Financial Advisory",
-            description: "Beyond capital, our senior partners provide expert debt structuring, risk assessment, and long-term financial planning to optimize your balance sheet.",
+            title: "Business Brokerage Services",
+            description: "Whether you're buying, selling, or valuing a business, our business brokerage partners provide guidance throughout the transaction process, helping business owners achieve successful outcomes.",
             icon: <LineChart size={28} className="text-brand-dark" strokeWidth={2} />,
             color: "bg-secondary/90"
         },
-        {
-            title: "Franchise & Equipment Funding",
-            description: "Rapidly scale your franchise footprint or upgrade critical operational technology and heavy machinery with specialized, fast-closing equipment finance.",
-            icon: <Briefcase size={28} className="text-white" strokeWidth={2} />,
-            color: "bg-primary"
-        }
+        // {
+        //     title: "",
+        //     description: "Rapidly scale your franchise footprint or upgrade critical operational technology and heavy machinery with specialized, fast-closing equipment finance.",
+        //     icon: <Briefcase size={28} className="text-white" strokeWidth={2} />,
+        //     color: "bg-primary"
+        // }
     ];
-
     return (
         <div className="min-h-screen bg-slate-50 font-sans antialiased overflow-hidden">
 
@@ -59,10 +134,10 @@ export default function BusinessServicesPage() {
                 </div>
 
                 <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
+                    {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
                         <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
                         <span className="text-white text-xs font-bold tracking-widest uppercase">Corporate Solutions</span>
-                    </div>
+                    </div> */}
 
                     <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8 font-headline">
                         Empowering <br />
@@ -71,8 +146,9 @@ export default function BusinessServicesPage() {
                         </span>
                     </h1>
 
-                    <p className="mt-4 text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                        Comprehensive capital solutions and strategic advisory services designed to scale your business without constraints.
+                    <p className="mt-4 text-xl text-slate-300 max-w-6xl mx-auto leading-relaxed">
+                        {/* Strategic advisory services designed to scale your business without constraints. */}
+                        At Stratmire Capital Partners LLC, we do more than help businesses secure capital. Through our network of trusted professionals and strategic partners, we provide essential business services designed to support growth, profitability, and long-term success.
                     </p>
                 </div>
             </section>
@@ -81,12 +157,15 @@ export default function BusinessServicesPage() {
             <section className="py-24 bg-white relative z-20 -mt-8 rounded-t-[3rem] border-t border-slate-200 shadow-[0_-20px_40px_rgba(0,0,0,0.1)]">
                 <div className="max-w-7xl mx-auto px-6 lg:px-8">
                     <div className="text-center mb-16 max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-5xl font-bold text-brand-dark tracking-tight mb-4 font-headline">
-                            Our <span className="text-primary">Business Services</span>
+                        <h2 className="text-3xl md:text-5xl font-extrabold text-secondary tracking-tight mb-4 uppercase">
+                            Our Business Services
                         </h2>
-                        <p className="text-lg text-slate-600">
-                            Stratmire Capital Partners provides a robust suite of financial products engineered to meet the complex demands of modern enterprises.
-                        </p>
+                        {/* <p className="text-lg text-slate-600">
+                            At Stratmire Capital Partners LLC, we do more than help businesses secure capital.
+                            Through our network of trusted professionals and strategic partners, we provide
+                            essential business services designed to support growth, profitability, and long-term
+                            success.
+                        </p> */}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -104,6 +183,7 @@ export default function BusinessServicesPage() {
                                 <p className="text-slate-600 leading-relaxed text-sm">
                                     {service.description}
                                 </p>
+                                <NewButton variant='primary' > Schedule Meet with an expert</NewButton>
                             </div>
                         ))}
                     </div>
@@ -178,27 +258,14 @@ export default function BusinessServicesPage() {
 
                 <div className="max-w-4xl mx-auto px-6 lg:px-8 relative z-10 text-center">
                     <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight font-headline mb-6">
-                        Fuel Your Next Big Move
+                        Take the Next Step Today
                     </h2>
                     <p className="text-lg text-gray-900 mb-10 max-w-2xl mx-auto">
-                        Whether you are expanding operations or acquiring new assets, our commercial underwriters are ready to structure your capital solution.
+                        Schedule a Consultation to speak with one of our expert.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <NewButton variant="primary">
-                            <Link
-                                href="/business-loan"
-                            >
-                                Apply for Business Funding
-                            </Link>
-                        </NewButton>
-                        <NewButton variant='secondary'>
-                            <Link
-                                href="/about"
-                            >
-                                Learn More About Us
-                            </Link>
-                        </NewButton>
+                        <NewButton variant='primary' > Schedule Meet with an expert</NewButton>
                     </div>
                 </div>
             </section >
