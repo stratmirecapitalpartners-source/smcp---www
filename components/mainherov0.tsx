@@ -1,45 +1,52 @@
 "use client"
 import React, { useState } from 'react'
 import LoanSelectionModal from '@/components/LoanPopup'
-import MeetingSelectionModal from '@/components/MeetingSelectionModal' // <-- Import the new modal
+import MeetingSelectionModal from '@/components/MeetingSelectionModal'
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 
 const Mainherov0 = () => {
-  // Setup separate states for both modals
   const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
   const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
+
+  // New state to control the scenario path selection
+  const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+
   const router = useRouter();
   const supabase = createClient();
   const [isRouting, setIsRouting] = useState(false);
 
-  const handleScenarioClick = async () => {
+  // Executes only if they select "As a Partner"
+  const handlePartnerScenarioClick = async () => {
     setIsRouting(true);
 
-    // 1. Check if they are logged in at all
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      // Not logged in -> Send to partner login
       router.push('/become-partner/login');
       return;
     }
 
-    // 2. If logged in, check their partner approval status
     const { data: partner } = await supabase
       .from('loan_partners')
       .select('status')
       .eq('email', user.email)
       .single();
 
-    // 3. Execute final routing based on database status
     if (partner?.status === 'APPROVED') {
-      router.push('/partner/dealform'); // Where the scenario form lives
+      router.push('/partner/dealform');
     } else {
-      router.push('/become-partner'); // Not approved or doesn't exist
+      router.push('/become-partner');
     }
 
     setIsRouting(false);
+    setIsScenarioModalOpen(false);
+  };
+
+  // Executes instantly if they select "As a Client"
+  const handleClientScenarioClick = () => {
+    setIsScenarioModalOpen(false);
+    router.push('/partner/dealform');
   };
 
   return (
@@ -68,7 +75,6 @@ const Mainherov0 = () => {
                 Apply for a loan
               </button>
 
-              {/* This button now triggers the modal state instead of Cal.com directly */}
               <button
                 onClick={() => setIsMeetModalOpen(true)}
                 className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-md font-bold text-lg hover:bg-white/20 transition-all"
@@ -76,12 +82,12 @@ const Mainherov0 = () => {
                 Schedule a meeting with an expert
               </button>
 
+              {/* Triggers the new selection modal */}
               <button
-                onClick={handleScenarioClick}
-                disabled={isRouting}
-                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-3.5 rounded-md font-bold transition-all backdrop-blur-sm disabled:opacity-50 flex items-center gap-2"
+                onClick={() => setIsScenarioModalOpen(true)}
+                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-3.5 rounded-md font-bold transition-all backdrop-blur-sm flex items-center gap-2"
               >
-                {isRouting ? 'Verifying Access...' : 'Submit a Loan Scenario'}
+                Submit a Loan Scenario
               </button>
 
             </div>
@@ -89,7 +95,7 @@ const Mainherov0 = () => {
         </div>
       </section>
 
-      {/* Mount both modals outside the main flow */}
+      {/* Existing Modals */}
       <LoanSelectionModal
         isOpen={isLoanModalOpen}
         onClose={() => setIsLoanModalOpen(false)}
@@ -99,6 +105,50 @@ const Mainherov0 = () => {
         isOpen={isMeetModalOpen}
         onClose={() => setIsMeetModalOpen(false)}
       />
+
+      {/* New Scenario Path Selection Modal */}
+      {isScenarioModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setIsScenarioModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 className="text-2xl font-black text-[#042f24] mb-2 tracking-tight">Submit a Scenario</h3>
+            <p className="text-slate-500 mb-8 text-sm">Please select how you are submitting this scenario so we can route you to the correct portal.</p>
+
+            <div className="space-y-4">
+              <button
+                onClick={handleClientScenarioClick}
+                className="w-full bg-[#042f24] text-white py-4 px-6 rounded-xl font-bold hover:bg-[#0a6c50] transition-colors shadow-md flex items-center justify-between group"
+              >
+                <span>As a Client</span>
+                <svg className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <button
+                onClick={handlePartnerScenarioClick}
+                disabled={isRouting}
+                className="w-full bg-slate-50 text-[#042f24] py-4 px-6 rounded-xl font-bold hover:bg-slate-100 transition-colors border border-slate-200 shadow-sm flex items-center justify-between group disabled:opacity-50"
+              >
+                <span>{isRouting ? 'Verifying...' : 'As a Partner'}</span>
+                {!isRouting && (
+                  <svg className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

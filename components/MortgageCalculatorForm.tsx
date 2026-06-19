@@ -1,18 +1,17 @@
-// components/MortgageCalculatorForm.tsx
 "use client";
 import React, { useState, useEffect } from 'react';
 
 export default function MortgageCalculatorForm() {
     // State for inputs
-    const [loanAmount, setLoanAmount] = useState(450000);
-    const [downPayment, setDownPayment] = useState(90000);
-    const [downPaymentPercent, setDownPaymentPercent] = useState(20);
-    const [interestRate, setInterestRate] = useState(6.5);
-    const [loanTerm, setLoanTerm] = useState(30);
+    const [loanAmount, setLoanAmount] = useState<number | string>(450000);
+    const [downPayment, setDownPayment] = useState<number | string>(90000);
+    const [downPaymentPercent, setDownPaymentPercent] = useState<number | string>(20);
+    const [interestRate, setInterestRate] = useState<number | string>(6.5);
+    const [loanTerm, setLoanTerm] = useState<number | string>(30);
 
     // Optional parameters
-    const [homeInsurance, setHomeInsurance] = useState(125);
-    const [hoaFees, setHoaFees] = useState(0);
+    const [homeInsurance, setHomeInsurance] = useState<number | string>(125);
+    const [hoaFees, setHoaFees] = useState<number | string>(0);
 
     // Constants for fixed costs
     const propertyTaxesMonthly = 342;
@@ -22,14 +21,27 @@ export default function MortgageCalculatorForm() {
     const [pmiMonthly, setPmiMonthly] = useState(0);
     const [totalPayment, setTotalPayment] = useState(0);
 
+    // Helper: Removes leading zeros (e.g., "03" -> "3") but keeps "0.5" intact
+    const sanitizeInput = (val: string) => {
+        if (val === '') return '';
+        return val.replace(/^0+(?=\d)/, '');
+    };
+
     useEffect(() => {
         calculateMortgage();
     }, [loanAmount, downPayment, interestRate, loanTerm, homeInsurance, hoaFees]);
 
     const calculateMortgage = () => {
-        const principal = loanAmount - downPayment;
-        const monthlyRate = interestRate / 100 / 12;
-        const numberOfPayments = loanTerm * 12;
+        const parsedLoanAmount = Number(loanAmount) || 0;
+        const parsedDownPayment = Number(downPayment) || 0;
+        const parsedInterestRate = Number(interestRate) || 0;
+        const parsedLoanTerm = Number(loanTerm) || 0;
+        const parsedHomeInsurance = Number(homeInsurance) || 0;
+        const parsedHoaFees = Number(hoaFees) || 0;
+
+        const principal = parsedLoanAmount - parsedDownPayment;
+        const monthlyRate = parsedInterestRate / 100 / 12;
+        const numberOfPayments = parsedLoanTerm * 12;
 
         let pi = 0;
         if (principal <= 0) {
@@ -37,32 +49,49 @@ export default function MortgageCalculatorForm() {
         } else if (monthlyRate === 0) {
             pi = principal / numberOfPayments;
         } else {
-            pi = (principal * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
-                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+            const mathPower = Math.pow(1 + monthlyRate, numberOfPayments);
+            pi = (principal * monthlyRate * mathPower) / (mathPower - 1);
+
+            // Safeguard against astronomical interest rates causing Infinity/Infinity = NaN
+            if (!isFinite(pi) || isNaN(pi)) {
+                pi = 0;
+            }
         }
 
         setMonthlyPI(pi);
 
-        // Dynamic PMI calculation: Automatically applied if down payment is less than 20%
-        const currentDownPercent = loanAmount > 0 ? (downPayment / loanAmount) * 100 : 0;
-        const calculatedPmi = currentDownPercent < 20 ? (loanAmount * 0.0075) / 12 : 0;
+        const currentDownPercent = parsedLoanAmount > 0 ? (parsedDownPayment / parsedLoanAmount) * 100 : 0;
+        const calculatedPmi = currentDownPercent < 20 ? (parsedLoanAmount * 0.0075) / 12 : 0;
         setPmiMonthly(calculatedPmi);
 
-        // Comprehensive Monthly Accumulation
-        setTotalPayment(pi + propertyTaxesMonthly + homeInsurance + hoaFees + calculatedPmi);
+        setTotalPayment(pi + propertyTaxesMonthly + parsedHomeInsurance + parsedHoaFees + calculatedPmi);
     };
 
-    const handlePercentChange = (val: any) => {
-        const percent = parseFloat(val) || 0;
-        setDownPaymentPercent(percent);
-        setDownPayment((percent / 100) * loanAmount);
+    const handlePercentChange = (val: string) => {
+        const cleanVal = sanitizeInput(val);
+        if (cleanVal === '') {
+            setDownPaymentPercent('');
+            setDownPayment(0);
+            return;
+        }
+        const percent = parseFloat(cleanVal) || 0;
+        const parsedLoanAmount = Number(loanAmount) || 0;
+        setDownPaymentPercent(cleanVal);
+        setDownPayment((percent / 100) * parsedLoanAmount);
     };
 
-    const handleAmountChange = (val: any) => {
-        const amount = parseFloat(val) || 0;
-        setDownPayment(amount);
-        if (loanAmount > 0) {
-            setDownPaymentPercent((amount / loanAmount) * 100);
+    const handleAmountChange = (val: string) => {
+        const cleanVal = sanitizeInput(val);
+        if (cleanVal === '') {
+            setDownPayment('');
+            setDownPaymentPercent(0);
+            return;
+        }
+        const amount = parseFloat(cleanVal) || 0;
+        const parsedLoanAmount = Number(loanAmount) || 0;
+        setDownPayment(cleanVal);
+        if (parsedLoanAmount > 0) {
+            setDownPaymentPercent((amount / parsedLoanAmount) * 100);
         }
     };
 
@@ -81,7 +110,7 @@ export default function MortgageCalculatorForm() {
                                     type="number"
                                     className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 focus:ring-2 focus:ring-primary py-4 pl-10 pr-4 rounded-lg text-lg font-semibold outline-none"
                                     value={loanAmount}
-                                    onChange={(e) => setLoanAmount(Number(e.target.value))}
+                                    onChange={(e) => setLoanAmount(sanitizeInput(e.target.value))}
                                 />
                             </div>
                         </div>
@@ -101,7 +130,7 @@ export default function MortgageCalculatorForm() {
                                 <input
                                     type="number"
                                     className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 px-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
-                                    value={downPaymentPercent.toFixed(1)}
+                                    value={downPaymentPercent === '' ? '' : Number(downPaymentPercent).toFixed(1)}
                                     onChange={(e) => handlePercentChange(e.target.value)}
                                 />
                             </div>
@@ -115,7 +144,7 @@ export default function MortgageCalculatorForm() {
                                     step="0.1"
                                     className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 px-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
                                     value={interestRate}
-                                    onChange={(e) => setInterestRate(Number(e.target.value))}
+                                    onChange={(e) => setInterestRate(sanitizeInput(e.target.value))}
                                 />
                             </div>
                             <div className="space-y-3">
@@ -141,7 +170,7 @@ export default function MortgageCalculatorForm() {
                                     type="number"
                                     className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 px-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
                                     value={homeInsurance}
-                                    onChange={(e) => setHomeInsurance(Number(e.target.value))}
+                                    onChange={(e) => setHomeInsurance(sanitizeInput(e.target.value))}
                                 />
                             </div>
                             <div className="space-y-3">
@@ -150,7 +179,7 @@ export default function MortgageCalculatorForm() {
                                     type="number"
                                     className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 px-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
                                     value={hoaFees}
-                                    onChange={(e) => setHoaFees(Number(e.target.value))}
+                                    onChange={(e) => setHoaFees(sanitizeInput(e.target.value))}
                                 />
                             </div>
                         </div>
@@ -196,7 +225,7 @@ export default function MortgageCalculatorForm() {
                                     <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
                                     <span className="text-on-surface-variant font-medium">Homeowners Insurance</span>
                                 </div>
-                                <span className="text-primary font-bold">${Math.round(homeInsurance).toLocaleString()}</span>
+                                <span className="text-primary font-bold">${Math.round(Number(homeInsurance) || 0).toLocaleString()}</span>
                             </div>
 
                             <div className="flex items-center justify-between">
@@ -204,7 +233,7 @@ export default function MortgageCalculatorForm() {
                                     <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
                                     <span className="text-on-surface-variant font-medium">HOA Fees</span>
                                 </div>
-                                <span className="text-primary font-bold">${Math.round(hoaFees).toLocaleString()}</span>
+                                <span className="text-primary font-bold">${Math.round(Number(hoaFees) || 0).toLocaleString()}</span>
                             </div>
 
                             {/* Mortgage Insurance (PMI) */}
@@ -221,7 +250,7 @@ export default function MortgageCalculatorForm() {
                             <div className="pt-4 border-t border-outline-variant/30">
                                 {pmiMonthly > 0 && (
                                     <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg mb-4 text-xs font-medium">
-                                        <strong>Notice:</strong> PMI is active because your down payment is below 20%. Put down ${Math.round(loanAmount * 0.2).toLocaleString()} to eliminate this fee.
+                                        <strong>Notice:</strong> PMI is active because your down payment is below 20%. Put down ${Math.round((Number(loanAmount) || 0) * 0.2).toLocaleString()} to eliminate this fee.
                                     </div>
                                 )}
                                 <button className="w-full bg-primary text-white py-4 rounded-lg font-bold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all uppercase text-sm tracking-wide">

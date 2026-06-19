@@ -11,9 +11,7 @@ export default function MortgageCalculatorPage() {
       <main className="min-h-screen bg-surface">
         <header className="pt-32 pb-12 px-12 max-w-screen-2xl mx-auto">
           <div className="max-w-3xl">
-            <span className="text-secondary font-bold tracking-widest text-xs uppercase mb-4 block">
-              Institutional Grade Tools
-            </span>
+
             <h1 className="font-display text-5xl md:text-6xl font-extrabold text-primary tracking-tight leading-tight mb-6">
               Mortgage Calculator
             </h1>

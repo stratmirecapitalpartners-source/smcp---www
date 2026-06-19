@@ -15,14 +15,19 @@ import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function AboutPage() {
-    // Setup separate states for both modals
+    // Setup separate states for modals
     const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
     const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
+
+    // New state to control the scenario path selection
+    const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+
     const router = useRouter();
     const supabase = createClient();
     const [isRouting, setIsRouting] = useState(false);
 
-    const handleScenarioClick = async () => {
+    // Executes only if they select "As a Partner"
+    const handlePartnerScenarioClick = async () => {
         setIsRouting(true);
 
         // 1. Check if they are logged in at all
@@ -49,7 +54,15 @@ export default function AboutPage() {
         }
 
         setIsRouting(false);
+        setIsScenarioModalOpen(false);
     };
+
+    // Executes instantly if they select "As a Client"
+    const handleClientScenarioClick = () => {
+        setIsScenarioModalOpen(false);
+        router.push('/partner/dealform');
+    };
+
     return (
         <>
             <div className="min-h-screen bg-white font-sans antialiased overflow-hidden">
@@ -86,8 +99,8 @@ export default function AboutPage() {
                     <div className="bg-white rounded-2xl shadow-2xl shadow-brand-dark/10  border border-slate-100 p-8 md:p-12">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x-0 md:divide-x divide-slate-100">
                             <div className="text-center px-4 mb-6 md:mb-0">
-                                <h4 className="text-4xl font-black text-primary mb-2">$4.2B+</h4>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Capital Deployed</p>
+                                <h4 className="text-4xl font-black text-primary mb-2">50+</h4>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Loan Products</p>
                             </div>
                             <div className="text-center px-4 mb-6 md:mb-0">
                                 <h4 className="text-4xl font-black text-primary mb-2">500+</h4>
@@ -159,17 +172,6 @@ export default function AboutPage() {
                                     support growth and profitability.
                                 </p>
                             </div>
-                            {/* <div className="border border-slate-200 rounded-2xl p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow bg-white">
-                                <div className="w-16 h-16 bg-secondary/90 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-                                    <ShieldCheck size={28} className="text-brand-dark" strokeWidth={2.5} />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-3">Professionalism and Transparency</h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
-                                    We prioritize integrity, communication, and transparency in every transaction. Our
-                                    clients and partners receive clear expectations, honest guidance, and access to
-                                    experienced financing professionals.
-                                </p>
-                            </div> */}
                         </div>
                     </div>
                 </section>
@@ -343,9 +345,13 @@ export default function AboutPage() {
                                     ))}
                                 </div>
                                 <div className="mt-10 pt-10 border-t border-slate-200">
-                                    <Link href="/become-partner/team" className="inline-flex items-center gap-2 text-primary font-bold text-lg hover:text-primary/80 transition-colors">
+                                    {/* Updated Button 1: Replaced Link with onClick modal trigger */}
+                                    <button
+                                        onClick={() => setIsScenarioModalOpen(true)}
+                                        className="inline-flex items-center gap-2 text-primary font-bold text-lg hover:text-primary/80 transition-colors"
+                                    >
                                         Submit your scenario today <ChevronRight size={20} />
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -378,13 +384,13 @@ export default function AboutPage() {
                                     >
                                         Schedule a meeting with an expert
                                     </button>
-                                    <NewButton variant="secondary">
-                                        <Link
-                                            href="/partner/dealform"
-                                        >
+
+                                    {/* Updated Button 2: Wrapped in onClick to trigger modal instead of Link */}
+                                    <span onClick={() => setIsScenarioModalOpen(true)} className="cursor-pointer">
+                                        <NewButton variant="secondary">
                                             Submit a Loan Scenario
-                                        </Link>
-                                    </NewButton>
+                                        </NewButton>
+                                    </span>
                                 </div>
                             </div>
 
@@ -422,12 +428,56 @@ export default function AboutPage() {
                 </section>
             </div>
 
+            {/* Existing Meeting Modal */}
             <MeetingSelectionModal
                 isOpen={isMeetModalOpen}
                 onClose={() => setIsMeetModalOpen(false)}
             />
 
-        </>
+            {/* New Scenario Path Selection Modal */}
+            {isScenarioModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">
+                        <button
+                            onClick={() => setIsScenarioModalOpen(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
 
+                        <h3 className="text-2xl font-black text-[#042f24] mb-2 tracking-tight">Submit a Scenario</h3>
+                        <p className="text-slate-500 mb-8 text-sm">Please select how you are submitting this scenario so we can route you to the correct portal.</p>
+
+                        <div className="space-y-4">
+                            <button
+                                onClick={handleClientScenarioClick}
+                                className="w-full bg-[#042f24] text-white py-4 px-6 rounded-xl font-bold hover:bg-[#0a6c50] transition-colors shadow-md flex items-center justify-between group"
+                            >
+                                <span>As a Client</span>
+                                <svg className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+
+                            <button
+                                onClick={handlePartnerScenarioClick}
+                                disabled={isRouting}
+                                className="w-full bg-slate-50 text-[#042f24] py-4 px-6 rounded-xl font-bold hover:bg-slate-100 transition-colors border border-slate-200 shadow-sm flex items-center justify-between group disabled:opacity-50"
+                            >
+                                <span>{isRouting ? 'Verifying...' : 'As a Partner'}</span>
+                                {!isRouting && (
+                                    <svg className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+        </>
     );
 }
