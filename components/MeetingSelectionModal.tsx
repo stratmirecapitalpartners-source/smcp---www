@@ -25,7 +25,12 @@ export default function MeetingSelectionModal({ isOpen, onClose }: MeetingSelect
         const cal = await getCalApi({ "namespace": "15min" });
         cal("modal", {
             // action: "open",
-            calLink: "roney-gajjar-qbehlx/15min",
+            // calLink: "roney-gajjar-qbehlx/15min",
+            // config: { "layout": "month_view", "useSlotsViewOnSmallScreen": "true" }
+
+
+            // data- cal - namespace="schedule-a-meet",
+            calLink: "stratmire-capital-partners/schedule-a-meet",
             config: { "layout": "month_view", "useSlotsViewOnSmallScreen": "true" }
         });
         onClose(); // Closes the Stratmire modal smoothly right as the calendar appears

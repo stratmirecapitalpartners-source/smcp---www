@@ -1,5 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     LayoutGrid, Users, DollarSign, FolderOpen, Settings,
     Bell, Copy, CheckCircle2, TrendingUp, ArrowRight,
@@ -8,6 +9,7 @@ import {
 import { createClient } from '@/lib/supabase';
 
 export default function PartnerDashboard() {
+    const router = useRouter();
     const [copied, setCopied] = useState(false);
     const [partnerCode, setPartnerCode] = useState('Loading...');
     const [partnerName, setPartnerName] = useState('Loading...');
@@ -129,9 +131,13 @@ export default function PartnerDashboard() {
                     </a>
                 </nav>
 
+                {/* UPDATED: Main Sidebar Submit Action */}
                 <div className="p-6">
-                    <button className="w-full bg-[#0a6c50] text-white font-bold py-3 rounded-xl hover:bg-[#085a42] transition-colors shadow-lg shadow-[#0a6c50]/20">
-                        New Referral
+                    <button
+                        onClick={() => router.push('/partner/dealform')}
+                        className="w-full flex items-center justify-center gap-2 bg-[#0a6c50] text-white font-bold py-3.5 rounded-xl hover:bg-[#085a42] transition-colors shadow-lg shadow-[#0a6c50]/20"
+                    >
+                        Submit a Deal <ArrowRight size={18} />
                     </button>
                 </div>
             </aside>
@@ -151,6 +157,14 @@ export default function PartnerDashboard() {
                     </div>
 
                     <div className="flex items-center gap-6">
+                        {/* NEW: Quick Action Header Button */}
+                        <button
+                            onClick={() => router.push('/partner/dealform')}
+                            className="hidden sm:flex items-center gap-2 bg-[#042f24] text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#0a6c50] transition-colors shadow-sm"
+                        >
+                            Submit Deal
+                        </button>
+
                         <button className="text-slate-400 hover:text-slate-800 transition-colors">
                             <Bell size={24} />
                         </button>

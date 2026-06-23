@@ -90,8 +90,7 @@ const Team = () => {
                                 </summary>
                                 <div className="px-5 pb-6">
                                     <p className="text-slate-600 font-medium text-sm leading-relaxed">
-                                        Designed for individuals who want to generate personal production while
-                                        building and leading a team of Loan Partners.
+                                        No upfront investment required
                                     </p>
                                 </div>
                             </details>
