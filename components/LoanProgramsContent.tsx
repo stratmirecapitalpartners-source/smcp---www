@@ -784,7 +784,7 @@ export default function LoanProgramsContent() {
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
 
                         {/* New Scenario Path Selection Trigger */}
-                        <span onClick={() => setIsScenarioModalOpen(true)} className="cursor-pointer">
+                        <span onClick={() => setIsLoanModalOpen(true)} className="cursor-pointer">
                             <NewButton variant='primary'>
                                 Start Application
                             </NewButton>
