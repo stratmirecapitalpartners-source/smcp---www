@@ -28,26 +28,28 @@ const Loanpartner = () => {
                             <div className="flex flex-col gap-4">
                                 <span className="material-symbols-outlined text-3xl text-slate-100">check_circle</span>
                                 <h4 className="font-headline font-black text-sm uppercase">No Licensing</h4>
-                                <p className="text-slate-100 text-xs leading-relaxed">Partner with the fastest growing commercial and business loan marketplace. We
-                                    provide the infrastructure; you bring the client.</p>
+                                <p className="text-slate-100 text-xs leading-relaxed">No mortgage license required for non-owner occupied
+                                    (Investment properties) transactions and business loans.</p>
                             </div>
                             <div className="flex flex-col gap-4">
                                 <span className="material-symbols-outlined text-3xl text-slate-100">handshake</span>
                                 <h4 className="font-headline font-black text-sm uppercase">Compensation</h4>
-                                <p className="text-slate-100 text-xs leading-relaxed">Partner with the fastest growing commercial and business loan marketplace. We
-                                    provide the infrastructure; you bring the client.</p>
+                                <p className="text-slate-100 text-xs leading-relaxed">Multiple income opportunities are available through funded
+                                    transactions and partner referrals.</p>
                             </div>
                             <div className="flex flex-col gap-4">
                                 <span className="material-symbols-outlined text-3xl text-slate-100">public</span>
                                 <h4 className="font-headline font-black text-sm uppercase">Nationwide Reach</h4>
-                                <p className="text-slate-100 text-xs leading-relaxed">Partner with the fastest growing commercial and business loan marketplace. We
-                                    provide the infrastructure; you bring the client.</p>
+                                <p className="text-slate-100 text-xs leading-relaxed">Operate from anywhere in the United States. Our
+                                    lending platform supports transactions across all 50 states and a wide range of
+                                    commercial, business, and investment real estate financing programs.</p>
                             </div>
                             <div className="flex flex-col gap-4">
                                 <span className="material-symbols-outlined text-3xl text-slate-100">bolt</span>
                                 <h4 className="font-headline font-black text-sm uppercase">Fast Commission Payouts</h4>
-                                <p className="text-slate-100 text-xs leading-relaxed">Partner with the fastest growing commercial and business loan marketplace. We
-                                    provide the infrastructure; you bring the client.</p>
+                                <p className="text-slate-100 text-xs leading-relaxed">Our streamlined tracking and payment system
+                                    ensures commissions are processed quickly following successful funding,
+                                    allowing you to get paid faster and grow your income with confidence.</p>
                             </div>
                         </div>
                     </div>
