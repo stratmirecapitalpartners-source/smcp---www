@@ -2,13 +2,18 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { Building2, ArrowRight, Loader2, User, ShieldAlert, Briefcase, FileSignature } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, User, ShieldAlert, Briefcase, FileSignature, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { generateReferralCode } from '@/lib/utils';
 
 export default function BecomePartnerPage() {
     const router = useRouter();
     const supabase = createClient();
+
+    // Application Status State
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Comprehensive Form State mapped to Stratmire Application Requirements
     const [formData, setFormData] = useState({
@@ -28,9 +33,6 @@ export default function BecomePartnerPage() {
         // Agreement & Acknowledgment
         acknowledgment: false, signature: '', printName: ''
     });
-
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -55,7 +57,7 @@ export default function BecomePartnerPage() {
         setError(null);
 
         try {
-            // 1. Create the Authentication Account
+            // 1. Create the Authentication Account (This auto-logs them in)
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
@@ -63,7 +65,7 @@ export default function BecomePartnerPage() {
 
             if (authError) throw authError;
 
-            // 2. CRITICAL STEP: Insert the partner row into the database
+            // 2. Insert the partner row into the database
             if (authData.user) {
 
                 // Split the full name to satisfy database structure
@@ -80,12 +82,8 @@ export default function BecomePartnerPage() {
                         last_name: lastName,
                         phone: formData.phone,
                         business_name: formData.businessName,
-
-                        // Mapped to match your exact existing schema requirements
                         signature_name: formData.signature,
                         referring_partner_code: formData.referredBy,
-
-                        // New columns we just added
                         dob: formData.dob,
                         ssn_last_4: formData.ssnLast4,
                         home_address: formData.homeAddress,
@@ -96,13 +94,16 @@ export default function BecomePartnerPage() {
                         years_experience: formData.yearsExperience,
                         relevant_experience: formData.relevantExperience,
                         partner_code: generateReferralCode(formData.email),
-
                         status: 'PENDING'
                     }]);
 
                 if (dbError) throw dbError;
-                // 3. Route to the dashboard
-                router.push('/partner/dashboard');
+
+                // 3. SECURE THE GATE: Instantly sign the user out so they cannot access the dashboard yet
+                await supabase.auth.signOut();
+
+                // 4. Trigger the Success Screen instead of routing
+                setIsSubmitted(true);
             }
         } catch (err: any) {
             console.error(err);
@@ -112,6 +113,37 @@ export default function BecomePartnerPage() {
         }
     };
 
+    // If the application was successfully submitted, show the Pending Approval screen
+    if (isSubmitted) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans py-12">
+                <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-10 text-center space-y-6">
+                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
+                        <CheckCircle2 size={40} className="text-[#0a6c50]" />
+                    </div>
+                    <h2 className="text-3xl font-black text-[#042f24] tracking-tight">Application Received</h2>
+
+                    <div className="space-y-4 text-slate-600 leading-relaxed text-sm md:text-base">
+                        <p>
+                            Thank you for applying to become a Stratmire Capital Partner. Your application has been secured and is currently under review by our administration team.
+                        </p>
+                        <p className="font-bold text-slate-900 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            Your account status is currently: PENDING
+                        </p>
+                        <p>
+                            You will receive an email notification granting you portal access once your profile has been fully vetted and approved.
+                        </p>
+                    </div>
+
+                    <Link href="/" className="inline-block mt-4 bg-[#042f24] text-white font-bold py-3.5 px-8 rounded-xl hover:bg-[#0a6c50] transition-colors shadow-lg">
+                        Return to Homepage
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // Default Form View
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans py-12">
 

@@ -8,7 +8,7 @@ import {
   ShieldAlert, CheckCircle2, XCircle, LogOut
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase"
-// import { Parser } from 'json2csv';
+import PartnerReviewModal from '@/components/PartnerReviewModal';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -24,6 +24,9 @@ export default function AdminDashboard() {
   const [lenders, setLenders] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Modal State
+  const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
 
   // 1. AUTHENTICATION GUARD
   useEffect(() => {
@@ -82,6 +85,11 @@ export default function AdminDashboard() {
     const { error } = await supabase.from('loan_partners').update({ status: newStatus }).eq('id', id);
     if (!error) {
       setLenders(lenders.map(p => p.id === id ? { ...p, status: newStatus } : p));
+
+      // Update modal state if the partner being approved/rejected is currently open
+      if (selectedPartner && selectedPartner.id === id) {
+        setSelectedPartner({ ...selectedPartner, status: newStatus });
+      }
     } else {
       alert("Failed to update partner status.");
     }
@@ -155,7 +163,7 @@ export default function AdminDashboard() {
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 overflow-y-auto p-8 lg:p-10">
+        <main className="flex-1 overflow-y-auto p-8 lg:p-10 relative">
 
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-10">
             <div>
@@ -247,7 +255,7 @@ export default function AdminDashboard() {
                     lenders.map((partner) => (
                       <tr key={partner.id} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-8 py-5 font-bold text-slate-900">
-                          {partner.full_legal_name}
+                          {partner.first_name} {partner.last_name}
                           <div className="text-xs font-normal text-slate-500 mt-1">{partner.business_name || 'Independent'}</div>
                         </td>
                         <td className="px-8 py-5 text-sm text-slate-600">{partner.email}</td>
@@ -270,7 +278,12 @@ export default function AdminDashboard() {
                               </div>
                             )}
                             <button onClick={() => handleDelete(partner.id)} className="p-2 text-red-400 hover:text-red-600 transition-colors rounded-lg"><Trash2 size={18} /></button>
-                            <Link href={`/admin/partner/${partner.id}`} className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors ml-2">Review</Link>
+                            <button
+                              onClick={() => setSelectedPartner(partner)}
+                              className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors ml-2"
+                            >
+                              Review
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -280,6 +293,14 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
+
+          {/* Render Review Modal when a partner is selected */}
+          {selectedPartner && (
+            <PartnerReviewModal
+              partner={selectedPartner}
+              onClose={() => setSelectedPartner(null)}
+            />
+          )}
         </main>
       </div>
     </div>

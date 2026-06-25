@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import {
     ArrowLeft, User, MapPin, Briefcase, DollarSign,
-    ShieldCheck, Calendar, GraduationCap, CheckCircle2
+    ShieldCheck, Calendar, GraduationCap, CheckCircle2,
+    FileCode2 // <-- Added missing icon import
 } from 'lucide-react';
 
 // Import the Document Viewer we built earlier
@@ -37,6 +38,62 @@ export default function BorrowerApplicationDetail() {
 
         fetchBorrowerData();
     }, [borrowerId, supabase]);
+
+    // 1. Recursive function to convert JSON to XML
+    const jsonToXml = (obj: any): string => {
+        let xml = '';
+        const isArray = Array.isArray(obj);
+
+        for (let key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                let value = obj[key];
+
+                // Sanitize tag names to prevent XML parsing errors
+                let tagName = isArray ? 'item' : key.replace(/[^a-zA-Z0-9_]/g, '_');
+                if (/^[0-9]/.test(tagName)) tagName = `_${tagName}`;
+                if (tagName === '') tagName = 'item';
+
+                if (value === null || value === undefined) {
+                    xml += `<${tagName}></${tagName}>\n`;
+                } else if (typeof value === 'object') {
+                    xml += `<${tagName}>\n${jsonToXml(value)}</${tagName}>\n`;
+                } else {
+                    // Escape special XML characters in values
+                    const safeValue = String(value)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&apos;');
+                    xml += `<${tagName}>${safeValue}</${tagName}>\n`;
+                }
+            }
+        }
+        return xml;
+    };
+
+    // 2. Click Handler to trigger the download
+    const handleDownloadXML = () => {
+        if (!borrower) return;
+
+        // Wrap the converted data in a root element
+        const xmlString = `<?xml version="1.0" encoding="UTF-8"?>\n<BorrowerApplication>\n${jsonToXml(borrower)}</BorrowerApplication>`;
+
+        // Create a Blob from the XML string
+        const blob = new Blob([xmlString], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+
+        // Create a hidden link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Application_${borrower.id || 'Data'}.xml`;
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
 
     if (isLoading) {
         return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-500">Decrypting Applicant File...</div>;
@@ -77,7 +134,7 @@ export default function BorrowerApplicationDetail() {
                             </div>
                         </div>
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 items-center">
                             <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/10">
                                 <p className="text-xs text-emerald-400/70 uppercase tracking-wider font-bold">Applied On</p>
                                 <p className="font-medium">{new Date(borrower.created_at).toLocaleDateString()}</p>
@@ -86,6 +143,15 @@ export default function BorrowerApplicationDetail() {
                                 <p className="text-xs text-emerald-400/70 uppercase tracking-wider font-bold">Status</p>
                                 <p className="font-bold text-emerald-400 flex items-center gap-1"><CheckCircle2 size={14} /> ACTIVE</p>
                             </div>
+
+                            {/* --- NEW EXPORT XML BUTTON --- */}
+                            <button
+                                onClick={handleDownloadXML}
+                                className="flex items-center gap-2 bg-white text-[#042f24] hover:bg-slate-100 px-5 py-3 rounded-lg font-bold text-sm shadow-md transition-colors ml-2"
+                            >
+                                <FileCode2 size={18} />
+                                Export XML
+                            </button>
                         </div>
                     </div>
                 </div>
