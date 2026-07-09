@@ -12,7 +12,7 @@ const Loanpartner = () => {
                         <div>
                             <span className="text-slate-100 font-headline font-bold tracking-widest text-[10px] uppercase mb-4 block">EXPANSION OPPORTUNITY</span>
                             <h2 className="text-slate-100 text-4xl md:text-5xl font-headline font-black tracking-tight leading-tight mb-8">
-                                Become a Loan Partner
+                                Become a Partner
                             </h2>
                             <p className="text-lg text-slate-100 font-body leading-relaxed mb-12 max-w-xl opacity-90">
                                 Partner with the fastest growing commercial and business loan marketplace. We

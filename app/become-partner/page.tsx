@@ -22,7 +22,10 @@ export default function BecomePartnerPage() {
 
         // Applicant Information
         fullLegalName: '', businessName: '', phone: '', email: '',
-        dob: '', ssnLast4: '', homeAddress: '', referredBy: '',
+        dob: '', ssnLast4: '', homeAddress: '',
+
+        // NEW: Split Referral Fields
+        referredPartnerName: '', referredPartnerCode: '',
 
         // Compliance & Disclosures
         felonyHistory: 'no', bankruptcyHistory: 'no',
@@ -57,7 +60,7 @@ export default function BecomePartnerPage() {
         setError(null);
 
         try {
-            // 1. Create the Authentication Account (This auto-logs them in)
+            // 1. Create the Authentication Account
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
@@ -67,7 +70,6 @@ export default function BecomePartnerPage() {
 
             // 2. Insert the partner row into the database
             if (authData.user) {
-
                 // Split the full name to satisfy database structure
                 const nameParts = formData.fullLegalName.trim().split(' ');
                 const firstName = nameParts[0];
@@ -83,7 +85,11 @@ export default function BecomePartnerPage() {
                         phone: formData.phone,
                         business_name: formData.businessName,
                         signature_name: formData.signature,
-                        referring_partner_code: formData.referredBy,
+
+                        // NEW: Pushing both referral fields to the database
+                        referring_partner_name: formData.referredPartnerName,
+                        referring_partner_code: formData.referredPartnerCode,
+
                         dob: formData.dob,
                         ssn_last_4: formData.ssnLast4,
                         home_address: formData.homeAddress,
@@ -99,10 +105,10 @@ export default function BecomePartnerPage() {
 
                 if (dbError) throw dbError;
 
-                // 3. SECURE THE GATE: Instantly sign the user out so they cannot access the dashboard yet
+                // 3. SECURE THE GATE: Instantly sign the user out
                 await supabase.auth.signOut();
 
-                // 4. Trigger the Success Screen instead of routing
+                // 4. Trigger the Success Screen
                 setIsSubmitted(true);
             }
         } catch (err: any) {
@@ -201,9 +207,15 @@ export default function BecomePartnerPage() {
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Home Address *</label>
                                 <input type="text" name="homeAddress" required value={formData.homeAddress} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" />
                             </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Referred by (Can only be referred by existing approved partner)</label>
-                                <input type="text" name="referredBy" value={formData.referredBy} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" />
+
+                            {/* NEW: Split Referral Fields */}
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Referred Partner Name (Optional)</label>
+                                <input type="text" name="referredPartnerName" value={formData.referredPartnerName} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="John Doe" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Partner Code (Optional)</label>
+                                <input type="text" name="referredPartnerCode" value={formData.referredPartnerCode} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="CODE123" />
                             </div>
                         </div>
                     </section>

@@ -13,6 +13,9 @@ export default function MortgageCalculatorForm() {
     const [homeInsurance, setHomeInsurance] = useState<number | string>(125);
     const [hoaFees, setHoaFees] = useState<number | string>(0);
 
+    // NEW: State to toggle Mortgage Insurance
+    const [includePmi, setIncludePmi] = useState<boolean>(true);
+
     // Constants for fixed costs
     const propertyTaxesMonthly = 342;
 
@@ -27,9 +30,10 @@ export default function MortgageCalculatorForm() {
         return val.replace(/^0+(?=\d)/, '');
     };
 
+    // Added includePmi to the dependency array so it recalculates instantly
     useEffect(() => {
         calculateMortgage();
-    }, [loanAmount, downPayment, interestRate, loanTerm, homeInsurance, hoaFees]);
+    }, [loanAmount, downPayment, interestRate, loanTerm, homeInsurance, hoaFees, includePmi]);
 
     const calculateMortgage = () => {
         const parsedLoanAmount = Number(loanAmount) || 0;
@@ -52,7 +56,6 @@ export default function MortgageCalculatorForm() {
             const mathPower = Math.pow(1 + monthlyRate, numberOfPayments);
             pi = (principal * monthlyRate * mathPower) / (mathPower - 1);
 
-            // Safeguard against astronomical interest rates causing Infinity/Infinity = NaN
             if (!isFinite(pi) || isNaN(pi)) {
                 pi = 0;
             }
@@ -61,7 +64,13 @@ export default function MortgageCalculatorForm() {
         setMonthlyPI(pi);
 
         const currentDownPercent = parsedLoanAmount > 0 ? (parsedDownPayment / parsedLoanAmount) * 100 : 0;
-        const calculatedPmi = currentDownPercent < 20 ? (parsedLoanAmount * 0.0075) / 12 : 0;
+
+        // UPDATED: Only calculate PMI if the toggle is checked AND down payment is < 20%
+        let calculatedPmi = 0;
+        if (includePmi && currentDownPercent < 20) {
+            calculatedPmi = (parsedLoanAmount * 0.0075) / 12;
+        }
+
         setPmiMonthly(calculatedPmi);
 
         setTotalPayment(pi + propertyTaxesMonthly + parsedHomeInsurance + parsedHoaFees + calculatedPmi);
@@ -103,7 +112,7 @@ export default function MortgageCalculatorForm() {
                 <div className="lg:col-span-5 flex flex-col gap-8">
                     <div className="bg-surface-container-low rounded-xl p-8 space-y-6">
                         <div className="space-y-3">
-                            <label className="block text-sm font-bold text-primary">Loan Amount</label>
+                            <label className="block text-sm font-bold text-primary">Purchase Amount</label>
                             <div className="relative">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
                                 <input
@@ -136,6 +145,19 @@ export default function MortgageCalculatorForm() {
                             </div>
                         </div>
 
+                        <div className="space-y-3">
+                            <label className="block text-sm font-bold text-primary">Loan Amount</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+                                <input
+                                    type="number"
+                                    className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 focus:ring-2 focus:ring-primary py-4 pl-10 pr-4 rounded-lg text-lg font-semibold outline-none"
+                                    value={Number(loanAmount) - Number(downPayment)}
+                                    disabled
+                                />
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-primary">Interest Rate (%)</label>
@@ -162,28 +184,63 @@ export default function MortgageCalculatorForm() {
                             </div>
                         </div>
 
-                        {/* Optional Cost Additions */}
-                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-outline-variant/20">
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/20 mt-4">
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-primary">Home Insurance ($/mo)</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 px-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
-                                    value={homeInsurance}
-                                    onChange={(e) => setHomeInsurance(sanitizeInput(e.target.value))}
-                                />
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 pl-10 pr-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
+                                        value={homeInsurance}
+                                        onChange={(e) => setHomeInsurance(sanitizeInput(e.target.value))}
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-primary">HOA Fees ($/mo)</label>
-                                <input
-                                    type="number"
-                                    className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 px-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
-                                    value={hoaFees}
-                                    onChange={(e) => setHoaFees(sanitizeInput(e.target.value))}
-                                />
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-surface-container-lowest border-none ring-1 ring-outline-variant/20 py-4 pl-10 pr-4 rounded-lg font-semibold outline-none focus:ring-2 focus:ring-primary"
+                                        value={hoaFees}
+                                        onChange={(e) => setHoaFees(sanitizeInput(e.target.value))}
+                                    />
+                                </div>
                             </div>
                         </div>
 
+                        {/* NEW: Interactive Toggle for PMI */}
+                        <div className="grid grid-cols-1 pt-4 border-t border-outline-variant/20 mt-4">
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                                    <input
+                                        type="checkbox"
+                                        checked={includePmi}
+                                        onChange={(e) => setIncludePmi(e.target.checked)}
+                                        className="w-4 h-4 text-primary focus:ring-primary border-outline-variant/30 rounded cursor-pointer transition-colors"
+                                    />
+                                    <span className="text-sm font-bold text-primary group-hover:text-secondary transition-colors">
+                                        Include Mortgage Insurance (PMI)
+                                    </span>
+                                </label>
+
+                                <div className="relative">
+                                    <span className={`absolute left-4 top-1/2 -translate-y-1/2 ${!includePmi ? 'text-outline-variant' : 'text-on-surface-variant'}`}>$</span>
+                                    <input
+                                        type="number"
+                                        disabled={!includePmi}
+                                        className={`w-full border-none ring-1 py-4 pl-10 pr-4 rounded-lg font-semibold outline-none transition-all ${!includePmi
+                                                ? 'bg-surface-container ring-outline-variant/10 text-outline-variant cursor-not-allowed'
+                                                : 'bg-surface-container-lowest ring-outline-variant/20 focus:ring-2 focus:ring-primary'
+                                            }`}
+                                        value={Math.round(pmiMonthly)}
+                                        onChange={(e) => setPmiMonthly(Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -240,7 +297,7 @@ export default function MortgageCalculatorForm() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-3 h-3 rounded-full ${pmiMonthly > 0 ? 'bg-amber-500' : 'bg-slate-300'}`}></div>
-                                    <span className="text-on-surface-variant font-medium">Mortgage Insurance (PMI)</span>
+                                    <span className={`font-medium ${!includePmi ? 'text-slate-400 line-through' : 'text-on-surface-variant'}`}>Mortgage Insurance (PMI)</span>
                                 </div>
                                 <span className={`font-bold ${pmiMonthly > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
                                     ${Math.round(pmiMonthly).toLocaleString()}
@@ -248,7 +305,7 @@ export default function MortgageCalculatorForm() {
                             </div>
 
                             <div className="pt-4 border-t border-outline-variant/30">
-                                {pmiMonthly > 0 && (
+                                {(pmiMonthly > 0 && includePmi) && (
                                     <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg mb-4 text-xs font-medium">
                                         <strong>Notice:</strong> PMI is active because your down payment is below 20%. Put down ${Math.round((Number(loanAmount) || 0) * 0.2).toLocaleString()} to eliminate this fee.
                                     </div>
