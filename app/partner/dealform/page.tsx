@@ -4,120 +4,161 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import {
     CheckCircle2, Clock, UploadCloud, Building2, User,
-    Briefcase, DollarSign, FileText, Send
+    Briefcase, DollarSign, FileText, Send, Loader2
 } from 'lucide-react';
 
-export default function PartnerDashboard() {
-    // const router = useRouter();
-    // const supabase = createClient();
-    // const [partner, setPartner] = useState<any>(null);
-    // const [isLoading, setIsLoading] = useState(true);
-    // const [isSubmitting, setIsSubmitting] = useState(false);
+export default function DealSubmissionForm() {
+    const router = useRouter();
+    const supabase = createClient();
 
-    // // Form State
-    // const [formData, setFormData] = useState({
-    //     // Partner Info
-    //     partnerName: '', companyName: '', partnerPhone: '', partnerEmail: '', partnerId: '',
-    //     // Client Info
-    //     borrowerName: '', businessName: '', borrowerPhone: '', borrowerEmail: '',
-    //     // Loan Request Details
-    //     loanType: '', loanPurpose: '', requestedAmount: '', estPropertyValue: '', purchasePrice: '', loanTerm: '', propertyAddress: '',
-    //     // Deal Overview
-    //     dealDescription: '',
-    //     // Financial Snapshot
-    //     creditScore: '', annualRevenue: '', monthlyIncome: '', existingDebt: '',
-    //     // Supporting Documents
-    //     docsBankStatements: false, docsTaxReturns: false, docsRentRoll: false,
-    //     docsPurchaseContract: false, docsBusinessFinancials: false, docsOther: '',
-    //     // Signature
-    //     partnerSignature: '',
-    // });
+    // Auth & Identity State
+    const [partner, setPartner] = useState<any>(null);
+    const [submitterType, setSubmitterType] = useState<'PARTNER' | 'CLIENT' | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-    // useEffect(() => {
-    //     async function fetchPartnerStatus() {
-    //         const { data: { user } } = await supabase.auth.getUser();
-    //         if (!user) {
-    //             router.push('/partner/login');
-    //             return;
-    //         }
+    // Form State
+    const [formData, setFormData] = useState({
+        // Partner Info (Only used if Partner)
+        partnerName: '', companyName: '', partnerPhone: '', partnerEmail: '', partnerId: '',
+        // Client Info
+        borrowerName: '', businessName: '', borrowerPhone: '', borrowerEmail: '',
+        // Loan Request Details
+        loanType: '', loanPurpose: '', requestedAmount: '', estPropertyValue: '', purchasePrice: '', loanTerm: '', propertyAddress: '',
+        // Deal Overview
+        dealDescription: '',
+        // Financial Snapshot
+        creditScore: '', annualRevenue: '', monthlyIncome: '', existingDebt: '',
+        // Supporting Documents
+        docsBankStatements: false, docsTaxReturns: false, docsRentRoll: false,
+        docsPurchaseContract: false, docsBusinessFinancials: false, docsOther: '',
+        // Signature
+        signature: '',
+    });
 
-    //         const { data } = await supabase
-    //             .from('loan_partners')
-    //             .select('*')
-    //             .eq('email', user.email)
-    //             .single();
+    useEffect(() => {
+        async function determineUserIdentity() {
+            const { data: { user } } = await supabase.auth.getUser();
 
-    //         if (data) {
-    //             setPartner(data);
-    //             // Pre-fill partner info from database combining first and last name
-    //             setFormData(prev => ({
-    //                 ...prev,
-    //                 partnerName: `${data.first_name || ''} ${data.last_name !== 'N/A' && data.last_name ? data.last_name : ''}`.trim(),
-    //                 companyName: data.business_name || '',
-    //                 partnerPhone: data.phone || '',
-    //                 partnerEmail: data.email || '',
-    //                 partnerId: data.id || ''
-    //             }));
-    //         }
-    //         setIsLoading(false);
-    //     }
-    //     fetchPartnerStatus();
-    // }, [router, supabase]);
+            // If no user is logged in, treat this as a Client submission
+            if (!user) {
+                setSubmitterType('CLIENT');
+                setIsLoading(false);
+                return;
+            }
 
-    // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    //     const { name, value, type } = e.target;
-    //     if (type === 'checkbox') {
-    //         const checked = (e.target as HTMLInputElement).checked;
-    //         setFormData(prev => ({ ...prev, [name]: checked }));
-    //     } else {
-    //         setFormData(prev => ({ ...prev, [name]: value }));
-    //     }
-    // };
+            // Use maybeSingle() to avoid throwing an error if the user isn't in the loan_partners table
+            const { data } = await supabase
+                .from('loan_partners')
+                .select('*')
+                .eq('email', user.email)
+                .maybeSingle();
 
-    // const handleSubmit = async (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     setIsSubmitting(true);
+            if (data) {
+                setPartner(data);
+                if (data.status === 'APPROVED') {
+                    setSubmitterType('PARTNER');
+                    // Pre-fill partner info
+                    setFormData(prev => ({
+                        ...prev,
+                        partnerName: `${data.first_name || ''} ${data.last_name !== 'N/A' && data.last_name ? data.last_name : ''}`.trim(),
+                        companyName: data.business_name || '',
+                        partnerPhone: data.phone || '',
+                        partnerEmail: data.email || '',
+                        partnerId: data.id || ''
+                    }));
+                } else {
+                    // They are logged in but pending approval
+                    setSubmitterType('PARTNER');
+                }
+            } else {
+                // User is authenticated but NOT found in the loan_partners table (e.g., an Admin)
+                setSubmitterType('CLIENT');
+            }
+            setIsLoading(false);
+        }
+        determineUserIdentity();
+    }, [router, supabase]);
 
-    //     // NOTE: Make sure your 'deal_submissions' table exists in Supabase to accept this payload
-    //     const { error } = await supabase.from('deal_submissions').insert([{
-    //         partner_id: partner.id,
-    //         payload: formData, // Storing as JSON for flexibility
-    //         status: 'SUBMITTED',
-    //         submitted_at: new Date().toISOString()
-    //     }]);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+        if (type === 'checkbox') {
+            const checked = (e.target as HTMLInputElement).checked;
+            setFormData(prev => ({ ...prev, [name]: checked }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
 
-    //     if (!error) {
-    //         alert("Deal Scenario successfully submitted for review!");
-    //         // Optionally reset form here
-    //     } else {
-    //         alert("Error submitting deal: " + error.message);
-    //     }
-    //     setIsSubmitting(false);
-    // };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
 
-    // if (isLoading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-500">Authenticating...</div>;
+        // GUARANTEE NO NULL VALUES FOR THE DATABASE
+        const safeSubmitterType = submitterType || 'CLIENT';
 
-    // // GUARD: PENDING APPROVAL
-    // if (!partner || partner.status !== 'APPROVED') {
-    //     return (
-    //         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-    //             <div className="bg-white p-10 rounded-2xl shadow-xl border border-slate-100 max-w-md w-full">
-    //                 <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
-    //                     <Clock size={40} className="text-amber-500" />
-    //                 </div>
-    //                 <h1 className="text-2xl font-black text-slate-900 mb-3">Account Pending Approval</h1>
-    //                 <p className="text-slate-500 mb-8 leading-relaxed">
-    //                     Your partner application has been received and is currently under review by the Stratmire Capital administration team.
-    //                 </p>
-    //                 <button onClick={async () => { await supabase.auth.signOut(); router.push('/'); }} className="text-sm font-bold text-[#0a6c50] hover:underline">
-    //                     Sign Out
-    //                 </button>
-    //             </div>
-    //         </div>
-    //     );
-    // }
+        const { error } = await supabase.from('deal_submissions').insert([{
+            partner_id: safeSubmitterType === 'PARTNER' ? partner?.id : null,
+            submitted_by_type: safeSubmitterType, // Strict fallback applied here
+            status: 'PENDING_REVIEW',
+            client_name: formData.borrowerName,
+            client_email: formData.borrowerEmail,
+            loan_amount: formData.requestedAmount,
+            loan_type: formData.loanType,
+            payload: formData
+        }]);
 
-    // APPROVED STATE: DEAL SUBMISSION FORM
+        if (!error) {
+            setIsSuccess(true);
+        } else {
+            alert("Error submitting deal: " + error.message);
+        }
+        setIsSubmitting(false);
+    };
+
+    if (isLoading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-500"><Loader2 className="animate-spin mr-2" /> Authenticating Portal...</div>;
+
+    // GUARD: PENDING PARTNER APPROVAL
+    if (submitterType === 'PARTNER' && partner?.status !== 'APPROVED') {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-10 rounded-2xl shadow-xl border border-slate-100 max-w-md w-full">
+                    <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Clock size={40} className="text-amber-500" />
+                    </div>
+                    <h1 className="text-2xl font-black text-slate-900 mb-3">Account Pending Approval</h1>
+                    <p className="text-slate-500 mb-8 leading-relaxed">
+                        Your partner application is currently under review. You cannot submit deals until your account is approved.
+                    </p>
+                    <button onClick={async () => { await supabase.auth.signOut(); router.push('/'); }} className="text-sm font-bold text-[#0a6c50] hover:underline">
+                        Sign Out & Return Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // SUCCESS STATE
+    if (isSuccess) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+                <div className="bg-white p-10 rounded-2xl shadow-xl border border-slate-100 max-w-md w-full animate-in zoom-in duration-300">
+                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <CheckCircle2 size={40} className="text-[#0a6c50]" />
+                    </div>
+                    <h1 className="text-2xl font-black text-slate-900 mb-3">Scenario Submitted</h1>
+                    <p className="text-slate-500 mb-8 leading-relaxed">
+                        Your deal scenario has been successfully transmitted to our underwriting team. We will be in touch shortly.
+                    </p>
+                    <button onClick={() => router.push('/')} className="w-full bg-[#042f24] text-white py-3 rounded-lg font-bold hover:bg-[#0a6c50] transition-colors">
+                        Return to Homepage
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans pb-24">
             <div className="max-w-4xl mx-auto">
@@ -125,18 +166,13 @@ export default function PartnerDashboard() {
                 <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3">
-                            Partner Portal <CheckCircle2 className="text-emerald-500" size={28} />
+                            {submitterType === 'PARTNER' ? 'Partner Portal' : 'Client Application'} <CheckCircle2 className="text-emerald-500" size={28} />
                         </h1>
                         <p className="text-slate-500 mt-2 font-medium">STRATMIRE CAPITAL PARTNERS LLC</p>
                     </div>
-                    {/* <button onClick={async () => { await supabase.auth.signOut(); router.push('/'); }} className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
-                        Sign Out
-                    </button> */}
                 </header>
 
-                <form
-                    // onSubmit={handleSubmit} 
-                    className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
                     <div className="bg-[#042f24] p-8 text-white">
                         <h2 className="text-2xl font-black flex items-center gap-2"><UploadCloud /> Deal Submission Form</h2>
@@ -145,36 +181,22 @@ export default function PartnerDashboard() {
 
                     <div className="p-8 space-y-12">
 
-                        {/* PARTNER INFORMATION */}
-                        <section>
-                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2"><Building2 size={20} className="text-[#0a6c50]" /> Partner Information</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Partner Name</label>
-                                    <input type="text" name="partnerName"
-                                        // value={formData.partnerName} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50" readOnly />
+                        {/* PARTNER INFO - ONLY VISIBLE IF SUBMITTED BY A PARTNER */}
+                        {submitterType === 'PARTNER' && (
+                            <section>
+                                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2"><Building2 size={20} className="text-[#0a6c50]" /> Submitting Partner</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Partner Name</label>
+                                        <input type="text" name="partnerName" value={formData.partnerName} readOnly className="w-full px-4 py-2 rounded-md border border-slate-200 bg-slate-100 text-slate-600 outline-none cursor-not-allowed" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Company Name</label>
+                                        <input type="text" name="companyName" value={formData.companyName} readOnly className="w-full px-4 py-2 rounded-md border border-slate-200 bg-slate-100 text-slate-600 outline-none cursor-not-allowed" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Company Name</label>
-                                    <input type="text" name="companyName"
-                                        // value={formData.companyName} onChange={handleInputChange} 
-                                        className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50" readOnly />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Phone Number</label>
-                                    <input type="tel" name="partnerPhone"
-                                        // value={formData.partnerPhone} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
-                                    <input type="email" name="partnerEmail"
-                                        // value={formData.partnerEmail} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50" readOnly />
-                                </div>
-                            </div>
-                        </section>
+                            </section>
+                        )}
 
                         {/* CLIENT / BORROWER INFORMATION */}
                         <section>
@@ -182,27 +204,19 @@ export default function PartnerDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Borrower Name</label>
-                                    <input type="text" name="borrowerName"
-                                        // value={formData.borrowerName} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="text" name="borrowerName" value={formData.borrowerName} onChange={handleInputChange} required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Business Name (if applicable)</label>
-                                    <input type="text" name="businessName"
-                                        // value={formData.businessName} onChange={handleInputChange} 
-                                        className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="text" name="businessName" value={formData.businessName} onChange={handleInputChange} className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Phone Number</label>
-                                    <input type="tel" name="borrowerPhone"
-                                        // value={formData.borrowerPhone} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="tel" name="borrowerPhone" value={formData.borrowerPhone} onChange={handleInputChange} required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
-                                    <input type="email" name="borrowerEmail"
-                                        // value={formData.borrowerEmail} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="email" name="borrowerEmail" value={formData.borrowerEmail} onChange={handleInputChange} required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                             </div>
                         </section>
@@ -213,9 +227,7 @@ export default function PartnerDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Loan Type</label>
-                                    <select name="loanType"
-                                        // value={formData.loanType} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-white">
+                                    <select name="loanType" value={formData.loanType} onChange={handleInputChange} required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-white">
                                         <option value="">Select Type...</option>
                                         <option value="DSCR">DSCR</option>
                                         <option value="Commercial">Commercial</option>
@@ -226,48 +238,36 @@ export default function PartnerDashboard() {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Loan Purpose</label>
-                                    <input type="text" name="loanPurpose"
-                                        // value={formData.loanPurpose} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="text" name="loanPurpose" value={formData.loanPurpose} onChange={handleInputChange} required className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Requested Loan Amount</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                        <input type="number" name="requestedAmount"
-                                            //value={formData.requestedAmount} onChange={handleInputChange} 
-                                            required className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                        <input type="number" name="requestedAmount" value={formData.requestedAmount} onChange={handleInputChange} required className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Estimated Property Value</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                        <input type="number" name="estPropertyValue"
-                                            //value={formData.estPropertyValue} onChange={handleInputChange} 
-                                            className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                        <input type="number" name="estPropertyValue" value={formData.estPropertyValue} onChange={handleInputChange} className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Purchase Price</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                        <input type="number" name="purchasePrice"
-                                            //value={formData.purchasePrice} onChange={handleInputChange} 
-                                            className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                        <input type="number" name="purchasePrice" value={formData.purchasePrice} onChange={handleInputChange} className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Loan Term Requested</label>
-                                    <input type="text" name="loanTerm"
-                                        //value={formData.loanTerm} onChange={handleInputChange} 
-                                        placeholder="e.g. 30 Years" className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="text" name="loanTerm" value={formData.loanTerm} onChange={handleInputChange} placeholder="e.g. 30 Years" className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Property Address (if applicable)</label>
-                                    <input type="text" name="propertyAddress"
-                                        //value={formData.propertyAddress} onChange={handleInputChange} 
-                                        className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="text" name="propertyAddress" value={formData.propertyAddress} onChange={handleInputChange} className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                             </div>
                         </section>
@@ -277,9 +277,7 @@ export default function PartnerDashboard() {
                             <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2"><FileText size={20} className="text-[#0a6c50]" /> Deal Overview</h3>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Brief Description of Deal</label>
-                                <textarea name="dealDescription"
-                                    //value={formData.dealDescription} onChange={handleInputChange}
-                                    rows={4} required className="w-full px-4 py-3 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none resize-none"></textarea>
+                                <textarea name="dealDescription" value={formData.dealDescription} onChange={handleInputChange} rows={4} required className="w-full px-4 py-3 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none resize-none"></textarea>
                             </div>
                         </section>
 
@@ -289,35 +287,27 @@ export default function PartnerDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Borrower Credit Score (Estimate)</label>
-                                    <input type="number" name="creditScore"
-                                        // value={formData.creditScore} onChange={handleInputChange}
-                                        className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                    <input type="number" name="creditScore" value={formData.creditScore} onChange={handleInputChange} className="w-full px-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Annual Revenue (if business)</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                        <input type="number" name="annualRevenue"
-                                            //value={formData.annualRevenue} onChange={handleInputChange} 
-                                            className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                        <input type="number" name="annualRevenue" value={formData.annualRevenue} onChange={handleInputChange} className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Monthly Income</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                        <input type="number" name="monthlyIncome"
-                                            //value={formData.monthlyIncome} onChange={handleInputChange} 
-                                            className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                        <input type="number" name="monthlyIncome" value={formData.monthlyIncome} onChange={handleInputChange} className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Existing Debt Obligations</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                                        <input type="number" name="existingDebt"
-                                            //value={formData.existingDebt} onChange={handleInputChange}
-                                            className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
+                                        <input type="number" name="existingDebt" value={formData.existingDebt} onChange={handleInputChange} className="w-full pl-8 pr-4 py-2 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none" />
                                     </div>
                                 </div>
                             </div>
@@ -328,40 +318,28 @@ export default function PartnerDashboard() {
                             <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wide">Supporting Documents to Submit</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="docsBankStatements"
-                                        // checked={formData.docsBankStatements} onChange={handleInputChange} 
-                                        className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
+                                    <input type="checkbox" name="docsBankStatements" checked={formData.docsBankStatements} onChange={handleInputChange} className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
                                     <span className="text-slate-700 font-medium text-sm">Bank Statements</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="docsTaxReturns"
-                                        // checked={formData.docsTaxReturns} onChange={handleInputChange} 
-                                        className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
+                                    <input type="checkbox" name="docsTaxReturns" checked={formData.docsTaxReturns} onChange={handleInputChange} className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
                                     <span className="text-slate-700 font-medium text-sm">Tax Returns</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="docsRentRoll"
-                                        // checked={formData.docsRentRoll} onChange={handleInputChange} 
-                                        className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
+                                    <input type="checkbox" name="docsRentRoll" checked={formData.docsRentRoll} onChange={handleInputChange} className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
                                     <span className="text-slate-700 font-medium text-sm">Rent Roll</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="docsPurchaseContract"
-                                        // checked={formData.docsPurchaseContract} onChange={handleInputChange} 
-                                        className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
+                                    <input type="checkbox" name="docsPurchaseContract" checked={formData.docsPurchaseContract} onChange={handleInputChange} className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
                                     <span className="text-slate-700 font-medium text-sm">Purchase Contract</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="docsBusinessFinancials"
-                                        // checked={formData.docsBusinessFinancials} onChange={handleInputChange} 
-                                        className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
+                                    <input type="checkbox" name="docsBusinessFinancials" checked={formData.docsBusinessFinancials} onChange={handleInputChange} className="w-4 h-4 text-[#0a6c50] border-slate-300 rounded focus:ring-[#0a6c50]" />
                                     <span className="text-slate-700 font-medium text-sm">Business Financials</span>
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <span className="text-slate-700 font-medium text-sm shrink-0">Other:</span>
-                                    <input type="text" name="docsOther"
-                                        // value={formData.docsOther} onChange={handleInputChange} 
-                                        className="w-full border-b border-slate-300 bg-transparent focus:border-[#0a6c50] outline-none text-sm py-1" />
+                                    <input type="text" name="docsOther" value={formData.docsOther} onChange={handleInputChange} className="w-full border-b border-slate-300 bg-transparent focus:border-[#0a6c50] outline-none text-sm py-1" />
                                 </div>
                             </div>
                         </section>
@@ -373,10 +351,8 @@ export default function PartnerDashboard() {
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Partner Signature (Type Full Name)</label>
-                                    <input type="text" name="partnerSignature"
-                                        // value={formData.partnerSignature} onChange={handleInputChange} 
-                                        required className="w-full px-4 py-3 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none font-medium text-slate-900 bg-slate-50" placeholder="Sign here..." />
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Signature (Type Full Name)</label>
+                                    <input type="text" name="signature" value={formData.signature} onChange={handleInputChange} required className="w-full px-4 py-3 rounded-md border border-slate-300 focus:ring-2 focus:ring-[#0a6c50] outline-none font-medium text-slate-900 bg-slate-50" placeholder="Sign here..." />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
@@ -390,11 +366,8 @@ export default function PartnerDashboard() {
                     </div>
 
                     <div className="bg-slate-50 p-6 border-t border-slate-200 flex justify-end">
-                        <button type="submit"
-                            // disabled={isSubmitting} 
-                            className="bg-[#0a6c50] text-white px-8 py-3.5 rounded-lg font-bold hover:bg-[#085a42] transition-colors flex items-center gap-2 shadow-lg disabled:opacity-50">
-                            {/* {isSubmitting ? "Submitting..." : "Submit Scenario for Review"} */}
-                            <Send size={18} />
+                        <button type="submit" disabled={isSubmitting} className="bg-[#0a6c50] text-white px-8 py-3.5 rounded-lg font-bold hover:bg-[#085a42] transition-colors flex items-center gap-2 shadow-lg disabled:opacity-50">
+                            {isSubmitting ? <><Loader2 className="animate-spin" size={18} /> Submitting...</> : <>Submit Scenario for Review <Send size={18} /></>}
                         </button>
                     </div>
                 </form>

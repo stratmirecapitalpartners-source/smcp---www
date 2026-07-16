@@ -152,6 +152,7 @@ export default function PartnerReviewModal({ partner, onClose }: PartnerReviewMo
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <DataField label="Full Legal Name" value={`${partner.first_name} ${partner.last_name}`} />
+                                <DataField label="Partnership Tier" value={partner.partner_tier || 'Starter'} />
                                 <DataField label="Date of Birth" value={partner.dob} />
                                 <DataField label="Email Address" value={partner.email} />
                                 <DataField label="Phone Number" value={partner.phone} />

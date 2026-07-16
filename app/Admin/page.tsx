@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase"
 import PartnerReviewModal from '@/components/PartnerReviewModal';
+import DealReviewModal from '@/components/DealReviewModal'; // <-- IMPORT ADDED
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -19,14 +20,16 @@ export default function AdminDashboard() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Data State
-  const [activeTab, setActiveTab] = useState<'borrowers' | 'lenders' | 'staff'>('borrowers');
+  const [activeTab, setActiveTab] = useState<'borrowers' | 'lenders' | 'staff' | 'deals'>('borrowers');
   const [borrowers, setBorrowers] = useState<any[]>([]);
   const [lenders, setLenders] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
+  const [deals, setDeals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modal State
+  // Modal States
   const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<any | null>(null); // <-- NEW STATE FOR DEAL REVIEW
 
   // 1. AUTHENTICATION GUARD
   useEffect(() => {
@@ -64,6 +67,9 @@ export default function AdminDashboard() {
       } else if (activeTab === 'staff') {
         const { data } = await supabase.from('admin_profiles').select('*').order('created_at', { ascending: false });
         if (data) setStaff(data);
+      } else if (activeTab === 'deals') {
+        const { data } = await supabase.from('deal_submissions').select('*').order('created_at', { ascending: false });
+        if (data) setDeals(data);
       }
       setIsLoading(false);
     }
@@ -80,7 +86,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // 4. PARTNER APPROVAL HANDLER (NEW)
+  // 4. PARTNER APPROVAL HANDLER
   const handleUpdatePartnerStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from('loan_partners').update({ status: newStatus }).eq('id', id);
     if (!error) {
@@ -95,9 +101,13 @@ export default function AdminDashboard() {
     }
   };
 
-  // UNIFIED DELETE
+  // 5. UNIFIED DELETE HANDLER
   const handleDelete = async (id: string) => {
-    const table = activeTab === 'borrowers' ? 'borrowers' : activeTab === 'lenders' ? 'loan_partners' : 'admin_profiles';
+    const table = activeTab === 'borrowers' ? 'borrowers'
+      : activeTab === 'lenders' ? 'loan_partners'
+        : activeTab === 'deals' ? 'deal_submissions'
+          : 'admin_profiles';
+
     const isConfirmed = window.confirm(`Are you sure you want to permanently delete this record?`);
     if (!isConfirmed) return;
 
@@ -105,7 +115,10 @@ export default function AdminDashboard() {
     if (!error) {
       if (activeTab === 'borrowers') setBorrowers(borrowers.filter((u) => u.id !== id));
       else if (activeTab === 'lenders') setLenders(lenders.filter((u) => u.id !== id));
+      else if (activeTab === 'deals') setDeals(deals.filter((u) => u.id !== id));
       else setStaff(staff.filter((u) => u.id !== id));
+    } else {
+      alert("Failed to delete record: " + error.message);
     }
   };
 
@@ -176,11 +189,13 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 overflow-x-auto">
 
-              <div className="flex items-center gap-8 border-b border-slate-200 w-full sm:w-auto">
+              <div className="flex items-center gap-8 border-b border-slate-200 w-full sm:w-auto shrink-0">
                 <button onClick={() => setActiveTab('borrowers')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'borrowers' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Active Borrowers</button>
                 <button onClick={() => setActiveTab('lenders')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'lenders' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Partner Network</button>
+                <button onClick={() => setActiveTab('deals')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'deals' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Deal Scenarios</button>
+
                 {adminProfile?.role === 'main_admin' && (
                   <button onClick={() => setActiveTab('staff')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'staff' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Staff Approvals</button>
                 )}
@@ -188,7 +203,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   {activeTab === 'staff' ? (
                     <tr>
@@ -204,6 +219,13 @@ export default function AdminDashboard() {
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[15%]">Status</th>
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right w-[35%]">Actions</th>
                     </tr>
+                  ) : activeTab === 'deals' ? (
+                    <tr>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[30%]">Client / Submitter</th>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[20%]">Loan Type</th>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[20%]">Amount</th>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right w-[30%]">Status / Actions</th>
+                    </tr>
                   ) : (
                     <tr>
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[30%]">Name</th>
@@ -217,7 +239,6 @@ export default function AdminDashboard() {
                   {isLoading ? (
                     <tr><td colSpan={5} className="px-8 py-10 text-center text-slate-400 font-medium">Loading data...</td></tr>
                   ) : activeTab === 'staff' ? (
-                    // --- STAFF TABLE ---
                     staff.map((user) => (
                       <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-8 py-5 font-bold text-slate-900">{user.email}</td>
@@ -237,8 +258,39 @@ export default function AdminDashboard() {
                         </td>
                       </tr>
                     ))
+                  ) : activeTab === 'deals' ? (
+                    // --- DEALS TABLE UPDATED WITH REVIEW BUTTON ---
+                    deals.map((deal) => (
+                      <tr key={deal.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5 font-bold text-slate-900">
+                          {deal.client_name || 'Unnamed Client'}
+                          <div className="text-[10px] uppercase font-bold tracking-widest mt-1">
+                            <span className={deal.submitted_by_type === 'PARTNER' ? 'text-indigo-500' : 'text-emerald-500'}>
+                              Submitted By: {deal.submitted_by_type}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-sm font-medium text-slate-600">{deal.loan_type || 'N/A'}</td>
+                        <td className="px-8 py-5 font-mono text-sm font-bold text-slate-700">
+                          {deal.loan_amount ? `$${Number(deal.loan_amount).toLocaleString()}` : 'N/A'}
+                        </td>
+                        <td className="px-8 py-5 text-right flex items-center justify-end">
+                          <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg uppercase tracking-wider mr-4">
+                            {(deal.status || 'PENDING').replace('_', ' ')}
+                          </span>
+                          <button onClick={() => handleDelete(deal.id)} className="p-2 text-red-400 hover:text-red-600 mr-2 transition-colors rounded-lg"><Trash2 size={18} /></button>
+
+                          {/* NEW REVIEW BUTTON */}
+                          <button
+                            onClick={() => setSelectedDeal(deal)}
+                            className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors"
+                          >
+                            Review
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   ) : activeTab === 'borrowers' ? (
-                    // --- BORROWERS TABLE ---
                     borrowers.map((user) => (
                       <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-8 py-5 font-bold text-slate-900">{user.first_name} {user.last_name}</td>
@@ -251,12 +303,16 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   ) : (
-                    // --- PARTNERS TABLE ---
                     lenders.map((partner) => (
                       <tr key={partner.id} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-8 py-5 font-bold text-slate-900">
                           {partner.first_name} {partner.last_name}
-                          <div className="text-xs font-normal text-slate-500 mt-1">{partner.business_name || 'Independent'}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-normal text-slate-500">{partner.business_name || 'Independent'}</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-indigo-50 text-indigo-600 border border-indigo-100">
+                              {partner.partner_tier || 'Starter'}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-8 py-5 text-sm text-slate-600">{partner.email}</td>
                         <td className="px-8 py-5">
@@ -266,7 +322,6 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-8 py-5 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {/* INLINE APPROVAL BUTTONS */}
                             {(!partner.status || partner.status === 'PENDING') && (
                               <div className="flex items-center gap-1 mr-3 border-r border-slate-200 pr-3">
                                 <button onClick={() => handleUpdatePartnerStatus(partner.id, 'APPROVED')} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Approve Partner">
@@ -294,11 +349,19 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Render Review Modal when a partner is selected */}
+          {/* Partner Review Modal */}
           {selectedPartner && (
             <PartnerReviewModal
               partner={selectedPartner}
               onClose={() => setSelectedPartner(null)}
+            />
+          )}
+
+          {/* NEW: Deal Scenario Review Modal */}
+          {selectedDeal && (
+            <DealReviewModal
+              deal={selectedDeal}
+              onClose={() => setSelectedDeal(null)}
             />
           )}
         </main>

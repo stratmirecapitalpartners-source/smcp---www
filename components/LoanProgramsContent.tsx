@@ -330,49 +330,84 @@ const LoanItem = ({ loan, route, router }: { loan: any, route: string, router: a
     const [showHighlights, setShowHighlights] = useState(false);
 
     return (
-        <details className="group bg-surface rounded-lg overflow-hidden transition-all duration-300 border border-transparent hover:border-outline-variant/50">
-            <summary className="flex items-center justify-between p-5 cursor-pointer select-none">
-                <h3 className="font-headline font-bold text-base text-primary">{loan.title}</h3>
-                {/* SVG icon dynamically rotates when the <details> tag is open */}
-                <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-            </summary>
-            <div className="px-5 pb-6">
-                <p className="text-gray-600 font-body text-sm leading-relaxed mb-4">
-                    {loan.desc}
-                </p>
+        <>
+            <details className="group bg-surface rounded-lg overflow-hidden transition-all duration-300 border border-transparent hover:border-outline-variant/50">
+                <summary className="flex items-center justify-between p-5 cursor-pointer select-none">
+                    <h3 className="font-headline font-bold text-base text-primary">{loan.title}</h3>
+                    <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </summary>
+                <div className="px-5 pb-6">
+                    <p className="text-gray-600 font-body text-sm leading-relaxed mb-6">
+                        {loan.desc}
+                    </p>
 
-                {showHighlights && (
-                    <div className="mb-6 bg-slate-50 border border-slate-100 rounded-lg p-5 animate-in fade-in slide-in-from-top-2">
-                        <h4 className="text-xs font-bold text-[#0a6c50] uppercase tracking-wider mb-3">Program Highlights</h4>
-                        <ul className="space-y-2">
-                            {loan.highlights.map((highlight: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 leading-snug">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#0a6c50] mt-1.5 shrink-0 opacity-80"></span>
-                                    <span>{highlight}</span>
-                                </li>
-                            ))}
-                        </ul>
+                    <div className="flex flex-col sm:flex-col gap-3">
+                        <button
+                            onClick={(e) => { e.preventDefault(); setShowHighlights(true); }}
+                            className="w-full sm:w-auto bg-slate-100 text-slate-700 px-6 py-2.5 rounded-md font-headline font-bold text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all text-center"
+                        >
+                            Program Highlights
+                        </button>
+                        <button
+                            onClick={(e) => { e.preventDefault(); router.push(route); }}
+                            className="w-full sm:w-auto bg-secondary text-on-secondary px-6 py-2.5 rounded-md font-headline font-bold text-[11px] uppercase tracking-widest hover:brightness-110 transition-all text-center"
+                        >
+                            Apply Now
+                        </button>
                     </div>
-                )}
-
-                <div className="flex flex-col sm:flex-col gap-3">
-                    <button
-                        onClick={(e) => { e.preventDefault(); setShowHighlights(!showHighlights); }}
-                        className="w-full sm:w-auto bg-slate-100 text-slate-700 px-6 py-2.5 rounded-md font-headline font-bold text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all text-center"
-                    >
-                        {showHighlights ? 'Hide Highlights' : 'Program Highlights'}
-                    </button>
-                    <button
-                        onClick={(e) => { e.preventDefault(); router.push(route); }}
-                        className="w-full sm:w-auto bg-secondary text-on-secondary px-6 py-2.5 rounded-md font-headline font-bold text-[11px] uppercase tracking-widest hover:brightness-110 transition-all text-center"
-                    >
-                        Apply Now
-                    </button>
                 </div>
-            </div>
-        </details>
+            </details>
+
+            {/* MODAL FOR HIGHLIGHTS */}
+            {showHighlights && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#042f24] text-white">
+                            <div>
+                                <h2 className="text-xl font-bold">{loan.title}</h2>
+                                <p className="text-emerald-400 text-xs tracking-wider uppercase font-bold mt-1">Program Highlights</p>
+                            </div>
+                            <button
+                                onClick={() => setShowHighlights(false)}
+                                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto p-6 md:p-8 bg-slate-50">
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {loan.highlights.map((highlight: string, idx: number) => (
+                                    <li key={idx} className="flex items-start gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                        <span className="w-2 h-2 rounded-full bg-[#0a6c50] mt-1.5 shrink-0 opacity-80"></span>
+                                        <span className="text-sm font-medium text-slate-700 leading-snug">{highlight}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="px-6 py-4 border-t border-slate-200 bg-white flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowHighlights(false)}
+                                className="px-6 py-2.5 text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => { setShowHighlights(false); router.push(route); }}
+                                className="bg-[#0a6c50] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-[#085a42] transition-colors shadow-md"
+                            >
+                                Apply Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 
@@ -455,7 +490,7 @@ export default function LoanProgramsContent() {
         <main className="min-h-screen">
 
             {/* HERO SECTION */}
-            <section className="w-full bg-[#042f24] py-20 lg:py-28 px-4 sm:px-8 relative overflow-hidden font-sans">
+            {/* <section className="w-full bg-[#042f24] py-20 lg:py-28 px-4 sm:px-8 relative overflow-hidden font-sans">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -translate-y-1/4 translate-x-1/4"></div>
 
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
@@ -479,6 +514,77 @@ export default function LoanProgramsContent() {
                             alt="Stratmire Commercial Real Estate Architecture Portfolio"
                             src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop"
                         />
+                    </div>
+                </div>
+            </section> */}
+
+            {/* HERO SECTION */}
+            <section className="relative w-full bg-[#0B1120] pt-24 pb-32 lg:pt-32 lg:pb-40 px-6 sm:px-12 overflow-hidden font-sans">
+                {/* Background Textures & Glows */}
+                <div className="absolute inset-0 opacity-[0.04] bg-[linear-gradient(rgba(255,255,255,1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,1)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-400/5 blur-[100px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
+
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-20">
+
+                        {/* Text Content - Left Side */}
+                        <div className="w-full lg:w-[55%] space-y-8 text-left">
+                            <div className="flex items-center gap-4">
+                                <div className="h-[2px] w-12 bg-blue-500"></div>
+                                <span className="text-sm font-black text-blue-400 uppercase tracking-[0.2em]">
+                                    Premium Capital Solutions
+                                </span>
+                            </div>
+
+                            <h1 className="text-white font-black text-5xl sm:text-6xl md:text-7xl tracking-tighter leading-[1.05]">
+                                YOUR NEXT LOAN <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+                                    STARTS HERE
+                                </span>
+                            </h1>
+
+                            <div className="border-l-4 border-blue-500/30 pl-6 py-2">
+                                <p className="text-slate-300 font-medium text-lg sm:text-xl leading-relaxed">
+                                    At Stratmire Capital Partners LLC, we believe access to capital should be simple,
+                                    strategic, and tailored to the unique needs of every borrower. Whether you're a business
+                                    owner seeking growth capital or a real estate investor expanding your portfolio, our
+                                    mission is to connect you with the right financing solution quickly and efficiently.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Visual / Image Composition - Right Side */}
+                        <div className="w-full lg:w-[45%] relative mt-8 lg:mt-0">
+
+                            {/* Offset Frame Decoration */}
+                            <div className="absolute inset-0 bg-blue-900/20 border border-blue-500/20 rounded-3xl transform translate-x-4 translate-y-6 sm:translate-x-8 sm:translate-y-8"></div>
+
+                            {/* Main Image */}
+                            <div className="relative z-10 w-full aspect-[4/5] sm:aspect-[4/3] lg:aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+                                <div className="absolute inset-0 bg-[#0B1120]/20 mix-blend-multiply z-10" />
+                                <img
+                                    className="w-full h-full object-cover filter contrast-105"
+                                    alt="Stratmire Commercial Real Estate Architecture Portfolio"
+                                    src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop"
+                                />
+                            </div>
+
+                            {/* Floating Overlay Card - Bottom Left */}
+                            <div className="absolute z-20 -bottom-6 -left-2 sm:-left-8 bg-[#0F172A] border border-blue-500/20 p-5 sm:p-6 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex items-center gap-4 backdrop-blur-md w-[90%] sm:w-auto">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shrink-0 shadow-inner">
+                                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="text-white font-black text-lg leading-tight tracking-tight">Accelerate Growth</p>
+                                    <p className="text-blue-300 text-sm font-medium mt-0.5">Tailored financial strategies</p>
+                                </div>
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -600,3 +706,5 @@ export default function LoanProgramsContent() {
         </main>
     );
 }
+
+// change the popup styling a bit where the cross should be a bit left and all other things are good and one more thing some cards has lot of elements and popup gets a scroll so change the list styling to match the bullet points it shouldnt be side by side if its exceeding the space

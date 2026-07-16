@@ -79,7 +79,7 @@ const Mainherov0 = () => {
                 onClick={() => setIsMeetModalOpen(true)}
                 className="bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-md font-bold text-lg hover:bg-white/20 transition-all"
               >
-                Schedule a meeting with an expert
+                Schedule a meeting
               </button>
 
               {/* Triggers the new selection modal */}
