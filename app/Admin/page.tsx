@@ -9,50 +9,43 @@ import {
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase"
 import PartnerReviewModal from '@/components/PartnerReviewModal';
-import DealReviewModal from '@/components/DealReviewModal'; // <-- IMPORT ADDED
+import DealReviewModal from '@/components/DealReviewModal';
+import BusinessLoanReviewModal from '@/components/BusinessLoanReviewModal';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Auth State
   const [adminProfile, setAdminProfile] = useState<any>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-  // Data State
-  const [activeTab, setActiveTab] = useState<'borrowers' | 'lenders' | 'staff' | 'deals'>('borrowers');
+  // Data States
+  const [activeTab, setActiveTab] = useState<'borrowers' | 'lenders' | 'staff' | 'deals' | 'business_loans'>('borrowers');
   const [borrowers, setBorrowers] = useState<any[]>([]);
   const [lenders, setLenders] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
+  const [businessLoans, setBusinessLoans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal States
   const [selectedPartner, setSelectedPartner] = useState<any | null>(null);
-  const [selectedDeal, setSelectedDeal] = useState<any | null>(null); // <-- NEW STATE FOR DEAL REVIEW
+  const [selectedDeal, setSelectedDeal] = useState<any | null>(null);
+  const [selectedBusinessLoan, setSelectedBusinessLoan] = useState<any | null>(null);
 
-  // 1. AUTHENTICATION GUARD
   useEffect(() => {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/admin/login');
-        return;
-      }
+      if (!user) { router.push('/admin/login'); return; }
 
       const { data: profile } = await supabase.from('admin_profiles').select('*').eq('id', user.id).single();
-
-      if (!profile || profile.status !== 'approved') {
-        setAdminProfile(profile || { status: 'pending' });
-      } else {
-        setAdminProfile(profile);
-      }
+      if (!profile || profile.status !== 'approved') setAdminProfile(profile || { status: 'pending' });
+      else setAdminProfile(profile);
       setIsAuthLoading(false);
     }
     checkAuth();
   }, [router, supabase]);
 
-  // 2. FETCH DASHBOARD DATA
   useEffect(() => {
     if (!adminProfile || adminProfile.status !== 'approved') return;
 
@@ -70,43 +63,44 @@ export default function AdminDashboard() {
       } else if (activeTab === 'deals') {
         const { data } = await supabase.from('deal_submissions').select('*').order('created_at', { ascending: false });
         if (data) setDeals(data);
+      } else if (activeTab === 'business_loans') {
+        const { data } = await supabase.from('business_loans').select('*').order('created_at', { ascending: false });
+        if (data) setBusinessLoans(data);
       }
       setIsLoading(false);
     }
     fetchData();
   }, [activeTab, adminProfile, supabase]);
 
-  // 3. STAFF APPROVAL HANDLER
   const handleUpdateStaffStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from('admin_profiles').update({ status: newStatus }).eq('id', id);
-    if (!error) {
-      setStaff(staff.map(s => s.id === id ? { ...s, status: newStatus } : s));
-    } else {
-      alert("Failed to update staff status.");
-    }
+    if (!error) setStaff(staff.map(s => s.id === id ? { ...s, status: newStatus } : s));
   };
 
-  // 4. PARTNER APPROVAL HANDLER
   const handleUpdatePartnerStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from('loan_partners').update({ status: newStatus }).eq('id', id);
     if (!error) {
       setLenders(lenders.map(p => p.id === id ? { ...p, status: newStatus } : p));
-
-      // Update modal state if the partner being approved/rejected is currently open
-      if (selectedPartner && selectedPartner.id === id) {
-        setSelectedPartner({ ...selectedPartner, status: newStatus });
-      }
-    } else {
-      alert("Failed to update partner status.");
+      if (selectedPartner && selectedPartner.id === id) setSelectedPartner({ ...selectedPartner, status: newStatus });
     }
   };
 
-  // 5. UNIFIED DELETE HANDLER
+  const handleUpdateDealStatus = async (id: string, newStatus: string) => {
+    const { error } = await supabase.from('deal_submissions').update({ status: newStatus }).eq('id', id);
+    if (!error) setDeals(deals.map(d => d.id === id ? { ...d, status: newStatus } : d));
+  };
+
+  const handleUpdateBusinessLoanStatus = async (id: string, newStatus: string) => {
+    const { error } = await supabase.from('business_loans').update({ status: newStatus }).eq('id', id);
+    if (!error) setBusinessLoans(businessLoans.map(d => d.id === id ? { ...d, status: newStatus } : d));
+  };
+
   const handleDelete = async (id: string) => {
     const table = activeTab === 'borrowers' ? 'borrowers'
       : activeTab === 'lenders' ? 'loan_partners'
         : activeTab === 'deals' ? 'deal_submissions'
-          : 'admin_profiles';
+          : activeTab === 'business_loans' ? 'business_loans'
+            : 'admin_profiles';
 
     const isConfirmed = window.confirm(`Are you sure you want to permanently delete this record?`);
     if (!isConfirmed) return;
@@ -116,9 +110,8 @@ export default function AdminDashboard() {
       if (activeTab === 'borrowers') setBorrowers(borrowers.filter((u) => u.id !== id));
       else if (activeTab === 'lenders') setLenders(lenders.filter((u) => u.id !== id));
       else if (activeTab === 'deals') setDeals(deals.filter((u) => u.id !== id));
+      else if (activeTab === 'business_loans') setBusinessLoans(businessLoans.filter((u) => u.id !== id));
       else setStaff(staff.filter((u) => u.id !== id));
-    } else {
-      alert("Failed to delete record: " + error.message);
     }
   };
 
@@ -127,9 +120,6 @@ export default function AdminDashboard() {
     router.push('/admin/login');
   };
 
-  const handleExport = () => { /* Export Logic Here */ };
-
-  // --- RENDER STATES ---
   if (isAuthLoading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-500">Verifying Credentials...</div>;
 
   if (adminProfile?.status !== 'approved') {
@@ -149,7 +139,6 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased">
       <div className="flex flex-1 overflow-hidden">
 
-        {/* SIDEBAR */}
         <aside className="w-[260px] bg-[#042f24] text-slate-300 flex flex-col hidden lg:flex shrink-0">
           <nav className="flex-1 py-8 px-4 space-y-2 overflow-y-auto">
             <a href="#" className="flex items-center gap-4 px-4 py-3 bg-[#0a4233] text-white rounded-lg font-medium shadow-sm">
@@ -175,7 +164,6 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA */}
         <main className="flex-1 overflow-y-auto p-8 lg:p-10 relative">
 
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-10">
@@ -184,17 +172,17 @@ export default function AdminDashboard() {
               <p className="text-slate-500 mt-1 font-medium">Logged in as {adminProfile?.email}</p>
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={handleExport} className="bg-[#0a6c50] text-white px-5 py-2.5 rounded-lg shadow-sm font-bold hover:bg-[#085a42] transition-colors">Export Report</button>
+              <button className="bg-[#0a6c50] text-white px-5 py-2.5 rounded-lg shadow-sm font-bold hover:bg-[#085a42] transition-colors">Export Report</button>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
             <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 overflow-x-auto">
-
               <div className="flex items-center gap-8 border-b border-slate-200 w-full sm:w-auto shrink-0">
                 <button onClick={() => setActiveTab('borrowers')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'borrowers' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Active Borrowers</button>
                 <button onClick={() => setActiveTab('lenders')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'lenders' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Partner Network</button>
                 <button onClick={() => setActiveTab('deals')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'deals' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Deal Scenarios</button>
+                <button onClick={() => setActiveTab('business_loans')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'business_loans' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Direct Applications</button>
 
                 {adminProfile?.role === 'main_admin' && (
                   <button onClick={() => setActiveTab('staff')} className={`font-bold pb-2 border-b-2 transition-colors ${activeTab === 'staff' ? 'border-[#0a4233] text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Staff Approvals</button>
@@ -224,6 +212,13 @@ export default function AdminDashboard() {
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[30%]">Client / Submitter</th>
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[20%]">Loan Type</th>
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[20%]">Amount</th>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right w-[30%]">Status / Actions</th>
+                    </tr>
+                  ) : activeTab === 'business_loans' ? (
+                    <tr>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[30%]">Applicant / Business</th>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[20%]">Funding Requested</th>
+                      <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-[20%]">Monthly Sales</th>
                       <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right w-[30%]">Status / Actions</th>
                     </tr>
                   ) : (
@@ -259,7 +254,6 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   ) : activeTab === 'deals' ? (
-                    // --- DEALS TABLE UPDATED WITH REVIEW BUTTON ---
                     deals.map((deal) => (
                       <tr key={deal.id} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-8 py-5 font-bold text-slate-900">
@@ -275,18 +269,47 @@ export default function AdminDashboard() {
                           {deal.loan_amount ? `$${Number(deal.loan_amount).toLocaleString()}` : 'N/A'}
                         </td>
                         <td className="px-8 py-5 text-right flex items-center justify-end">
-                          <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg uppercase tracking-wider mr-4">
-                            {(deal.status || 'PENDING').replace('_', ' ')}
+                          {deal.status === 'PENDING_REVIEW' && (
+                            <div className="flex items-center gap-1 mr-2 border-r border-slate-200 pr-2">
+                              <button onClick={() => handleUpdateDealStatus(deal.id, 'APPROVED')} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><CheckCircle2 size={18} /></button>
+                              <button onClick={() => handleUpdateDealStatus(deal.id, 'REJECTED')} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><XCircle size={18} /></button>
+                            </div>
+                          )}
+                          <span className={`px-3 py-1 text-[11px] font-bold rounded-lg uppercase tracking-wider mr-4 ${deal.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : deal.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                            {(deal.status || 'PENDING_REVIEW').replace('_', ' ')}
                           </span>
                           <button onClick={() => handleDelete(deal.id)} className="p-2 text-red-400 hover:text-red-600 mr-2 transition-colors rounded-lg"><Trash2 size={18} /></button>
-
-                          {/* NEW REVIEW BUTTON */}
-                          <button
-                            onClick={() => setSelectedDeal(deal)}
-                            className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors"
-                          >
-                            Review
-                          </button>
+                          <button onClick={() => setSelectedDeal(deal)} className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors">Review</button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : activeTab === 'business_loans' ? (
+                    businessLoans.map((loan) => (
+                      <tr key={loan.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5 font-bold text-slate-900">
+                          {loan.first_name} {loan.last_name}
+                          <div className="text-[10px] uppercase font-bold tracking-widest mt-1 text-slate-500">
+                            {loan.legal_business_name || 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 font-mono text-sm font-bold text-slate-700">
+                          {loan.funding_amount ? `$${Number(loan.funding_amount).toLocaleString()}` : 'N/A'}
+                        </td>
+                        <td className="px-8 py-5 font-mono text-sm font-medium text-slate-600">
+                          {loan.monthly_sales ? `$${Number(loan.monthly_sales).toLocaleString()}` : 'N/A'}
+                        </td>
+                        <td className="px-8 py-5 text-right flex items-center justify-end">
+                          {loan.status === 'PENDING_REVIEW' && (
+                            <div className="flex items-center gap-1 mr-2 border-r border-slate-200 pr-2">
+                              <button onClick={() => handleUpdateBusinessLoanStatus(loan.id, 'APPROVED')} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><CheckCircle2 size={18} /></button>
+                              <button onClick={() => handleUpdateBusinessLoanStatus(loan.id, 'REJECTED')} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><XCircle size={18} /></button>
+                            </div>
+                          )}
+                          <span className={`px-3 py-1 text-[11px] font-bold rounded-lg uppercase tracking-wider mr-4 ${loan.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : loan.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                            {(loan.status || 'PENDING_REVIEW').replace('_', ' ')}
+                          </span>
+                          <button onClick={() => handleDelete(loan.id)} className="p-2 text-red-400 hover:text-red-600 mr-2 transition-colors rounded-lg"><Trash2 size={18} /></button>
+                          <button onClick={() => setSelectedBusinessLoan(loan)} className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors">Review</button>
                         </td>
                       </tr>
                     ))
@@ -324,21 +347,12 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-end gap-2">
                             {(!partner.status || partner.status === 'PENDING') && (
                               <div className="flex items-center gap-1 mr-3 border-r border-slate-200 pr-3">
-                                <button onClick={() => handleUpdatePartnerStatus(partner.id, 'APPROVED')} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Approve Partner">
-                                  <CheckCircle2 size={18} />
-                                </button>
-                                <button onClick={() => handleUpdatePartnerStatus(partner.id, 'REJECTED')} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Reject Partner">
-                                  <XCircle size={18} />
-                                </button>
+                                <button onClick={() => handleUpdatePartnerStatus(partner.id, 'APPROVED')} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><CheckCircle2 size={18} /></button>
+                                <button onClick={() => handleUpdatePartnerStatus(partner.id, 'REJECTED')} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><XCircle size={18} /></button>
                               </div>
                             )}
                             <button onClick={() => handleDelete(partner.id)} className="p-2 text-red-400 hover:text-red-600 transition-colors rounded-lg"><Trash2 size={18} /></button>
-                            <button
-                              onClick={() => setSelectedPartner(partner)}
-                              className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors ml-2"
-                            >
-                              Review
-                            </button>
+                            <button onClick={() => setSelectedPartner(partner)} className="px-4 py-2 bg-[#0a6c50] text-white text-xs font-bold rounded-lg hover:bg-[#085a42] transition-colors ml-2">Review</button>
                           </div>
                         </td>
                       </tr>
@@ -349,21 +363,9 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Partner Review Modal */}
-          {selectedPartner && (
-            <PartnerReviewModal
-              partner={selectedPartner}
-              onClose={() => setSelectedPartner(null)}
-            />
-          )}
-
-          {/* NEW: Deal Scenario Review Modal */}
-          {selectedDeal && (
-            <DealReviewModal
-              deal={selectedDeal}
-              onClose={() => setSelectedDeal(null)}
-            />
-          )}
+          {selectedPartner && <PartnerReviewModal partner={selectedPartner} onClose={() => setSelectedPartner(null)} />}
+          {selectedDeal && <DealReviewModal deal={selectedDeal} onClose={() => setSelectedDeal(null)} />}
+          {selectedBusinessLoan && <BusinessLoanReviewModal loan={selectedBusinessLoan} onClose={() => setSelectedBusinessLoan(null)} />}
         </main>
       </div>
     </div>

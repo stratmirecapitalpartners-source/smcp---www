@@ -1,14 +1,18 @@
 "use client"
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { Building2, ArrowRight, Loader2, User, ShieldAlert, Briefcase, FileSignature, CheckCircle2, Star } from 'lucide-react';
+import { Loader2, User, ShieldAlert, Briefcase, FileSignature, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { generateReferralCode } from '@/lib/utils';
 
-export default function BecomePartnerPage() {
+function PartnerForm() {
     const router = useRouter();
     const supabase = createClient();
+    const searchParams = useSearchParams();
+
+    // Grab the tier from the URL (defaults to Starter if someone bypasses the pricing page)
+    const urlTier = searchParams.get('tier') || 'Starter';
 
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -16,7 +20,7 @@ export default function BecomePartnerPage() {
 
     const [formData, setFormData] = useState({
         password: '',
-        partnerTier: 'Starter', // Default value
+        partnerTier: urlTier, // Initialized from URL
         fullLegalName: '', businessName: '', phone: '', email: '',
         dob: '', ssnLast4: '', homeAddress: '',
         referredPartnerName: '', referredPartnerCode: '',
@@ -25,11 +29,12 @@ export default function BecomePartnerPage() {
         acknowledgment: false, signature: ''
     });
 
-    // Unified handler that correctly processes radio buttons, checkboxes, and text inputs
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
+
         if (type === 'checkbox') {
-            setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+            setFormData(prev => ({ ...prev, [name]: checked }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
@@ -70,7 +75,7 @@ export default function BecomePartnerPage() {
                         signature_name: formData.signature,
                         referring_partner_name: formData.referredPartnerName,
                         referring_partner_code: formData.referredPartnerCode,
-                        partner_tier: formData.partnerTier,
+                        partner_tier: formData.partnerTier, // Submits the hidden URL value
                         dob: formData.dob,
                         ssn_last_4: formData.ssnLast4,
                         home_address: formData.homeAddress,
@@ -97,35 +102,26 @@ export default function BecomePartnerPage() {
 
     if (isSubmitted) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
-                <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-10 text-center space-y-6">
-                    <CheckCircle2 size={60} className="text-[#0a6c50] mx-auto" />
-                    <h2 className="text-3xl font-black text-[#042f24]">Application Received</h2>
-                    <p>Thank you for applying for the <strong>{formData.partnerTier}</strong> tier. Your application is under review.</p>
-                    <Link href="/" className="inline-block bg-[#042f24] text-white font-bold py-3 px-8 rounded-xl">Return to Homepage</Link>
-                </div>
+            <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-10 text-center space-y-6">
+                <CheckCircle2 size={60} className="text-[#0a6c50] mx-auto" />
+                <h2 className="text-3xl font-black text-[#042f24]">Application Received</h2>
+                <p>Thank you for applying for the <strong>{formData.partnerTier}</strong> tier. Your application is under review.</p>
+                <Link href="/" className="inline-block bg-[#042f24] text-white font-bold py-3 px-8 rounded-xl">Return to Homepage</Link>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans py-12">
-            <form onSubmit={handlePartnerSignup} className="max-w-3xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-8">
+        <div className="w-full max-w-3xl">
+            {error && <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl font-medium border border-red-200">{error}</div>}
 
-                {/* TIER SELECTION */}
-                <section>
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Star size={20} className="text-[#0a6c50]" /> Partnership Tier</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {['Starter', 'Producer'].map((tier) => (
-                            <label key={tier} className={`cursor-pointer p-5 rounded-xl border-2 transition-all ${formData.partnerTier === tier ? 'border-[#0a6c50] bg-emerald-50' : 'border-slate-200'}`}>
-                                <div className="flex items-center justify-between">
-                                    <span className="font-black text-lg">{tier}</span>
-                                    <input type="radio" name="partnerTier" value={tier} checked={formData.partnerTier === tier} onChange={handleInputChange} className="w-4 h-4 text-[#0a6c50]" />
-                                </div>
-                            </label>
-                        ))}
-                    </div>
-                </section>
+            <form onSubmit={handlePartnerSignup} className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
+
+                {/* Visual confirmation of the selected tier */}
+                <div className="bg-[#042f24] text-white p-4 rounded-xl flex items-center justify-between mb-8">
+                    <span className="font-medium text-emerald-100">Selected Partnership Level:</span>
+                    <span className="font-black text-lg tracking-wider uppercase">{formData.partnerTier}</span>
+                </div>
 
                 {/* APPLICANT INFORMATION */}
                 <section>
@@ -259,8 +255,19 @@ export default function BecomePartnerPage() {
                     {loading ? <Loader2 className="animate-spin mx-auto" /> : "Submit Application"}
                 </button>
             </form>
+        </div>
+    );
+}
 
-            <div className="bg-slate-50 text-center py-6 border-t border-slate-100 mt-8 w-full max-w-3xl">
+export default function BecomePartnerPage() {
+    return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans py-12">
+            {/* Suspense boundary is required by Next.js when using useSearchParams() */}
+            <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="w-10 h-10 animate-spin text-[#0a6c50]" /></div>}>
+                <PartnerForm />
+            </Suspense>
+
+            <div className="bg-slate-50 text-center py-6 mt-8 w-full max-w-3xl">
                 <p className="text-sm font-medium text-slate-500">
                     Already have an approved account?{' '}
                     <Link href="/become-partner/login" className="font-bold text-[#0a6c50] hover:underline">Log In</Link>

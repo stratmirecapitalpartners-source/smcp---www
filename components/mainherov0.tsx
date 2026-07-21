@@ -36,7 +36,7 @@ const Mainherov0 = () => {
     if (partner?.status === 'APPROVED') {
       router.push('/partner/dealform');
     } else {
-      router.push('/become-partner');
+      router.push('/become-partner/login');
     }
 
     setIsRouting(false);

@@ -150,8 +150,10 @@ const Team = () => {
                                 </div>
                             </details>
 
-                            <button onClick={() => router.push("/become-partner")}
-                                className="w-full mt-4 bg-[#0a6c50] text-white px-6 py-4 rounded-xl font-bold text-sm tracking-wide hover:bg-[#085a42] transition-colors shadow-lg shadow-[#0a6c50]/20 uppercase">
+                            <button
+                                onClick={() => router.push("/become-partner?tier=Starter")}
+                                className="w-full mt-4 bg-[#0a6c50] text-white px-6 py-4 rounded-xl font-bold text-sm tracking-wide hover:bg-[#085a42] transition-colors shadow-lg shadow-[#0a6c50]/20 uppercase"
+                            >
                                 Apply as Starter
                             </button>
                         </div>
@@ -253,8 +255,10 @@ const Team = () => {
                                 </div>
                             </details>
 
-                            <button onClick={() => router.push("/become-partner")}
-                                className="w-full mt-4 bg-gradient-to-r from-[#D4AF37] to-[#BFA054] text-[#042f24] px-6 py-4 rounded-xl font-bold text-sm tracking-wide hover:brightness-110 transition-all shadow-lg shadow-[#D4AF37]/20 uppercase">
+                            <button
+                                onClick={() => router.push("/become-partner?tier=Producer")}
+                                className="w-full mt-4 bg-[#eab308] text-[#042f24] px-6 py-4 rounded-xl font-bold text-sm tracking-wide hover:brightness-110 transition-colors shadow-lg shadow-[#eab308]/20 uppercase"
+                            >
                                 Apply as Producer
                             </button>
                         </div>
