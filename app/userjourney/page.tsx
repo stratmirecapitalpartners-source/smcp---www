@@ -42,6 +42,9 @@ export default function BorrowerInfoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [borrowerId, setBorrowerId] = useState<string | null>(null)
 
+  // ✅ Added Hydration State to prevent race conditions
+  const [isHydrated, setIsHydrated] = useState(false)
+
   // Referral State
   const [referralCode, setReferralCode] = useState("")
 
@@ -175,11 +178,17 @@ export default function BorrowerInfoPage() {
       setCitizenship(parsed.citizenship || "");
       setMaritalStatus(parsed.maritalStatus || "");
     }
+
+    // ✅ Signal that data loading is complete so persistence can begin
+    setIsHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 2. PERSISTENCE: Save to browser memory automatically as they type
   useEffect(() => {
+    // ✅ Guard: Do not overwrite storage if hydration hasn't finished
+    if (!isHydrated) return;
+
     const draft = {
       formData, addresses, jobs, dependents, additionalIncomes, mailingAddress, referralCode,
       hasOtherNames, hasDependents, hasBeenEmployed, hasAdditionalIncome,
@@ -190,6 +199,7 @@ export default function BorrowerInfoPage() {
     };
     sessionStorage.setItem('borrowerInfoDraft', JSON.stringify(draft));
   }, [
+    isHydrated, // ✅ Added dependency
     formData, addresses, jobs, dependents, additionalIncomes, mailingAddress, referralCode,
     hasOtherNames, hasDependents, hasBeenEmployed, hasAdditionalIncome,
     hasMilitaryService, militaryStatus, militaryExpirationDate,
@@ -384,7 +394,6 @@ export default function BorrowerInfoPage() {
       has_additional_income: hasAdditionalIncome === "yes",
       additional_income_sources: hasAdditionalIncome === "yes" ? additionalIncomes : [],
 
-      // --- NEW REFERRAL CODE MAPPING ---
       referring_partner_code: referralCode ? referralCode.toUpperCase() : null
     };
 
@@ -425,7 +434,7 @@ export default function BorrowerInfoPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto px-4 md:px-6">
       <header className="mb-12">
         <h1 className="font-headline text-5xl font-extrabold text-primary tracking-tight leading-tight">
           Personal Identity
@@ -436,14 +445,14 @@ export default function BorrowerInfoPage() {
       </header>
 
       <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-10 rounded-xl shadow-sm border border-outline-variant/10 relative overflow-hidden">
+        <div className="col-span-12 md:col-span-8 bg-surface-container-lowest p-8 md:p-10 rounded-xl shadow-sm border border-outline-variant/10 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-secondary/30"></div>
 
           <form className="space-y-8" onSubmit={handleSubmit} suppressHydrationWarning>
 
             {/* IDENTITY SECTION */}
             <h2 className="pb-3 text-lg font-bold text-primary">Whats the borrower&apos;s Legal Name ?</h2>
-            <FieldGroup className="grid max-w-xl grid-cols-2">
+            <FieldGroup className="grid max-w-xl grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="suffix">Suffix</FieldLabel>
                 <Input id="suffix" placeholder="Suffix" value={formData.suffix} onChange={handleInputChange} />
@@ -466,11 +475,11 @@ export default function BorrowerInfoPage() {
             <h2 className="text-lg font-bold text-primary border-t border-outline-variant/20 pt-6">Have you ever gone by any other names?</h2>
             <FieldSet className="w-full max-w-xs pt-2">
               <RadioGroup value={hasOtherNames} onValueChange={setHasOtherNames} className="flex flex-col gap-4">
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasOtherNames === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasOtherNames === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="yes" id="names-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">Yes, I have used other names</span>
                 </label>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasOtherNames === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasOtherNames === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="no" id="names-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">No, I have not</span>
                 </label>
@@ -480,7 +489,7 @@ export default function BorrowerInfoPage() {
             {hasOtherNames === "yes" && (
               <div className="bg-surface-container-high/50 p-6 rounded-lg border border-outline-variant/20 transition-all">
                 <h3 className="text-sm font-bold text-primary mb-4">Previous / Alternative Name</h3>
-                <FieldGroup className="grid max-w-xl grid-cols-2">
+                <FieldGroup className="grid max-w-xl grid-cols-2 gap-4">
                   <Field className="col-span-2 sm:col-span-1">
                     <FieldLabel htmlFor="alt-first-name">First Name <span className="text-destructive">*</span></FieldLabel>
                     <Input id="alt-first-name" placeholder="Previous First Name" required={hasOtherNames === "yes"} value={formData.altFirstName} onChange={handleInputChange} />
@@ -498,7 +507,7 @@ export default function BorrowerInfoPage() {
             )}
 
             {/* CONTACT INFO */}
-            <FieldGroup className="grid max-w-xl grid-cols-2 pt-6 border-t border-outline-variant/20 mt-6">
+            <FieldGroup className="grid max-w-xl grid-cols-2 gap-4 pt-6 border-t border-outline-variant/20 mt-6">
               <Field>
                 <FieldLabel htmlFor="fieldgroup-email">Email <span className="text-destructive">*</span></FieldLabel>
                 <Input id="fieldgroup-email" type="email" placeholder="name@example.com" required value={formData.email} onChange={handleInputChange} />
@@ -535,15 +544,15 @@ export default function BorrowerInfoPage() {
             <h2 className="text-lg font-bold text-primary">What&apos;s your citizenship status?</h2>
             <FieldSet className="w-full pt-2">
               <RadioGroup value={citizenship} onValueChange={setCitizenship} className="flex flex-col gap-4" required>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${citizenship === 'us-citizen' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${citizenship === 'us-citizen' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="us-citizen" id="citizen-us" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">U.S. Citizen</span>
                 </label>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${citizenship === 'permanent-resident' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${citizenship === 'permanent-resident' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="permanent-resident" id="citizen-permanent" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">Permanent Resident Alien</span>
                 </label>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${citizenship === 'non-resident' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${citizenship === 'non-resident' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="non-resident" id="citizen-nonresident" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">Non-Permanent Resident Alien</span>
                 </label>
@@ -553,15 +562,15 @@ export default function BorrowerInfoPage() {
             <h2 className="text-lg font-bold text-primary">What&apos;s your Marital status?</h2>
             <FieldSet className="w-full max-w-xs pt-2">
               <RadioGroup value={maritalStatus} onValueChange={setMaritalStatus} className="flex flex-col gap-4" required>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${maritalStatus === 'married' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${maritalStatus === 'married' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="married" id="marital-married" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">Married</span>
                 </label>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${maritalStatus === 'separated' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${maritalStatus === 'separated' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="separated" id="marital-separated" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">Separated</span>
                 </label>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${maritalStatus === 'unmarried' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${maritalStatus === 'unmarried' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="unmarried" id="marital-unmarried" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-normal leading-none text-primary">Unmarried</span>
                 </label>
@@ -633,13 +642,13 @@ export default function BorrowerInfoPage() {
                     <FieldLabel htmlFor="addr-zip">Zip <span className="text-red-500">*</span></FieldLabel>
                     <Input id="addr-zip" placeholder="12345" value={addrForm.zip} onChange={handleAddressChange} />
                   </Field>
-                  <div className="grid grid-cols-2 gap-7">
-                    <Field className="col-span-12 sm:col-span-6 flex flex-col justify-end">
+                  <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-7">
+                    <Field className="flex flex-col justify-end">
                       <FieldLabel htmlFor="addr-date-moved-in">Date moved in</FieldLabel>
                       <Input id="addr-date-moved-in" type="date" value={addrForm.dateMovedIn} onChange={handleAddressChange} />
                     </Field>
 
-                    <div className="col-span-12 sm:col-span-6 flex items-end gap-4">
+                    <div className="flex flex-col justify-end gap-4">
                       {!addrForm.isCurrent && (
                         <div className="flex-1 space-y-2">
                           <FieldLabel htmlFor="addr-date-moved-out">Date moved out</FieldLabel>
@@ -658,15 +667,15 @@ export default function BorrowerInfoPage() {
                 <div className="space-y-4 pt-4">
                   <FieldLabel>Housing status</FieldLabel>
                   <RadioGroup value={addrForm.housingStatus} onValueChange={(val) => setAddrForm(p => ({ ...p, housingStatus: val }))} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <label className={`flex items-center gap-3 p-6 border rounded-md cursor-pointer transition-all ${addrForm.housingStatus === 'Renting' ? 'border-blue-400 bg-blue-50' : 'border-outline-variant/30 bg-white hover:bg-slate-50'}`}>
+                    <label className={`flex items-center gap-3 p-6 border-2 rounded-md cursor-pointer transition-all ${addrForm.housingStatus === 'Renting' ? 'border-blue-400 bg-blue-50' : 'border-outline-variant/30 bg-white hover:bg-slate-50'}`}>
                       <RadioGroupItem value="Renting" id="hs-rent" className="shrink-0" />
                       <span className="font-medium text-primary">Renting</span>
                     </label>
-                    <label className={`flex items-center gap-3 p-6 border rounded-md cursor-pointer transition-all ${addrForm.housingStatus === 'Own' ? 'border-blue-400 bg-blue-50' : 'border-outline-variant/30 bg-white hover:bg-slate-50'}`}>
+                    <label className={`flex items-center gap-3 p-6 border-2 rounded-md cursor-pointer transition-all ${addrForm.housingStatus === 'Own' ? 'border-blue-400 bg-blue-50' : 'border-outline-variant/30 bg-white hover:bg-slate-50'}`}>
                       <RadioGroupItem value="Own" id="hs-own" className="shrink-0" />
                       <span className="font-medium text-primary">Own</span>
                     </label>
-                    <label className={`flex items-center gap-3 p-6 border rounded-md cursor-pointer transition-all ${addrForm.housingStatus === 'No Expense' ? 'border-blue-400 bg-blue-50' : 'border-outline-variant/30 bg-white hover:bg-slate-50'}`}>
+                    <label className={`flex items-center gap-3 p-6 border-2 rounded-md cursor-pointer transition-all ${addrForm.housingStatus === 'No Expense' ? 'border-blue-400 bg-blue-50' : 'border-outline-variant/30 bg-white hover:bg-slate-50'}`}>
                       <RadioGroupItem value="No Expense" id="hs-none" className="shrink-0" />
                       <span className="font-medium text-primary leading-tight">No Expense<br /></span>
                     </label>
@@ -705,11 +714,11 @@ export default function BorrowerInfoPage() {
               <h2 className="text-xl font-bold text-primary">Is {formData.firstName || "Roney"}&apos;s mailing address different from their current address?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasDifferentMailingAddress} onValueChange={setHasDifferentMailingAddress} className="flex flex-row gap-8">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasDifferentMailingAddress === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasDifferentMailingAddress === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="mail-diff-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasDifferentMailingAddress === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasDifferentMailingAddress === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="mail-diff-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">No</span>
                   </label>
@@ -761,11 +770,11 @@ export default function BorrowerInfoPage() {
               <h2 className="text-2xl font-black text-primary">Has {formData.firstName || "Roney"} been employed in the last two years?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasBeenEmployed} onValueChange={setHasBeenEmployed} className="flex flex-row gap-8">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasBeenEmployed === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasBeenEmployed === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="emp-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasBeenEmployed === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasBeenEmployed === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="emp-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">No</span>
                   </label>
@@ -811,11 +820,11 @@ export default function BorrowerInfoPage() {
                         <h3 className="text-sm font-medium text-primary">Are you self-employed or the business owner? <span className="text-destructive">*</span></h3>
                         <FieldSet className="w-full max-w-xs">
                           <RadioGroup value={jobForm.isSelfEmployed} onValueChange={(val) => setJobForm(p => ({ ...p, isSelfEmployed: val }))} className="flex flex-row gap-4">
-                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border transition-all cursor-pointer shadow-sm ${jobForm.isSelfEmployed === 'yes' ? 'border-primary bg-primary/5' : 'border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border-2 transition-all cursor-pointer shadow-sm ${jobForm.isSelfEmployed === 'yes' ? 'border-primary bg-slate-50' : 'border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="yes" id="job-self-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-medium leading-none text-primary">Yes</span>
                             </label>
-                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border transition-all cursor-pointer shadow-sm ${jobForm.isSelfEmployed === 'no' ? 'border-primary bg-primary/5' : 'border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border-2 transition-all cursor-pointer shadow-sm ${jobForm.isSelfEmployed === 'no' ? 'border-primary bg-slate-50' : 'border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="no" id="job-self-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-medium leading-none text-primary">No</span>
                             </label>
@@ -827,11 +836,11 @@ export default function BorrowerInfoPage() {
                         <h3 className="text-sm font-medium text-primary">Do you have ownership of 25% or more? <span className="text-destructive">*</span></h3>
                         <FieldSet className="w-full max-w-xs">
                           <RadioGroup value={jobForm.hasOwnership} onValueChange={(val) => setJobForm(p => ({ ...p, hasOwnership: val }))} className="flex flex-row gap-4">
-                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border transition-all cursor-pointer shadow-sm ${jobForm.hasOwnership === 'yes' ? 'border-primary bg-primary/5' : 'border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border-2 transition-all cursor-pointer shadow-sm ${jobForm.hasOwnership === 'yes' ? 'border-primary bg-slate-50' : 'border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="yes" id="job-own-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-medium leading-none text-primary">Yes</span>
                             </label>
-                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border transition-all cursor-pointer shadow-sm ${jobForm.hasOwnership === 'no' ? 'border-primary bg-primary/5' : 'border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 bg-white px-6 py-3 rounded-md border-2 transition-all cursor-pointer shadow-sm ${jobForm.hasOwnership === 'no' ? 'border-primary bg-slate-50' : 'border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="no" id="job-own-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-medium leading-none text-primary">No</span>
                             </label>
@@ -864,11 +873,11 @@ export default function BorrowerInfoPage() {
               <h2 className="text-2xl font-black text-primary">Does {formData.firstName || "Roney"} have any additional income sources?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasAdditionalIncome} onValueChange={setHasAdditionalIncome} className="flex flex-row gap-8">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasAdditionalIncome === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasAdditionalIncome === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="add-inc-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasAdditionalIncome === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasAdditionalIncome === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="add-inc-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">No</span>
                   </label>
@@ -974,11 +983,11 @@ export default function BorrowerInfoPage() {
               <h2 className="text-xl font-bold text-primary">Did {formData.firstName || "Roney"} (or their deceased spouse) ever serve, or are they currently serving, in the United States Armed Forces?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasMilitaryService} onValueChange={setHasMilitaryService} className="flex flex-row gap-8">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasMilitaryService === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasMilitaryService === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="mil-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasMilitaryService === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasMilitaryService === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="mil-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">No</span>
                   </label>
@@ -990,19 +999,19 @@ export default function BorrowerInfoPage() {
                   <h2 className="text-lg font-bold text-primary">What is {formData.firstName || "Roney"}&apos;s military status?</h2>
                   <FieldSet className="w-full">
                     <RadioGroup value={militaryStatus} onValueChange={setMilitaryStatus} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border transition-all cursor-pointer ${militaryStatus === 'active_duty' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${militaryStatus === 'active_duty' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                         <RadioGroupItem value="active_duty" id="mil-active" className="shrink-0 h-4 w-4 mt-1 border border-primary text-primary focus:ring-secondary" />
                         <span className="font-normal leading-tight text-primary">Currently on Active Duty</span>
                       </label>
-                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border transition-all cursor-pointer ${militaryStatus === 'retired' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${militaryStatus === 'retired' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                         <RadioGroupItem value="retired" id="mil-retired" className="shrink-0 h-4 w-4 mt-1 border border-primary text-primary focus:ring-secondary" />
                         <span className="font-normal leading-tight text-primary">Currently retired, discharged, or separate from service</span>
                       </label>
-                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border transition-all cursor-pointer ${militaryStatus === 'reserve' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${militaryStatus === 'reserve' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                         <RadioGroupItem value="reserve" id="mil-reserve" className="shrink-0 h-4 w-4 mt-1 border border-primary text-primary focus:ring-secondary" />
                         <span className="font-normal leading-tight text-primary">Only period of service was as a non-activate member of the Reserve or National Guard</span>
                       </label>
-                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border transition-all cursor-pointer ${militaryStatus === 'surviving_spouse' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                      <label className={`flex items-start gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${militaryStatus === 'surviving_spouse' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                         <RadioGroupItem value="surviving_spouse" id="mil-spouse" className="shrink-0 h-4 w-4 mt-1 border border-primary text-primary focus:ring-secondary" />
                         <span className="font-normal leading-tight text-primary">Surviving Spouse</span>
                       </label>
@@ -1024,11 +1033,11 @@ export default function BorrowerInfoPage() {
               <h2 className="text-xl font-bold text-primary">Has {formData.firstName || "Roney"} completed home-ownership education (group or web-based classes) within the last 12 months?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasEducation} onValueChange={setHasEducation} className="flex flex-row gap-8">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasEducation === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasEducation === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="edu-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasEducation === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasEducation === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="edu-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">No</span>
                   </label>
@@ -1041,11 +1050,11 @@ export default function BorrowerInfoPage() {
                     <h3 className="text-lg font-medium text-primary">What format was it in? (Check the most recent)</h3>
                     <FieldSet className="w-full">
                       <RadioGroup value={educationFormat} onValueChange={setEducationFormat} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <label className={`flex items-center gap-3 px-6 py-4 rounded-md border transition-all cursor-pointer ${educationFormat === 'in_person' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                        <label className={`flex items-center gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${educationFormat === 'in_person' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                           <RadioGroupItem value="in_person" id="edu-format-in-person" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                           <span className="font-normal leading-tight text-primary">Attended Workshop in Person</span>
                         </label>
-                        <label className={`flex items-center gap-3 px-6 py-4 rounded-md border transition-all cursor-pointer ${educationFormat === 'web_based' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                        <label className={`flex items-center gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${educationFormat === 'web_based' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                           <RadioGroupItem value="web_based" id="edu-format-web" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                           <span className="font-normal leading-tight text-primary">Completed Web-Based Workshop</span>
                         </label>
@@ -1059,11 +1068,11 @@ export default function BorrowerInfoPage() {
                         <h3 className="text-lg font-medium text-primary mb-3">Was it provided by a HUD-approved agency?<br /><span className="text-sm font-normal text-on-surface-variant">(If you are unsure, please select &apos;no&apos;)</span></h3>
                         <FieldSet className="w-full max-w-xs">
                           <RadioGroup value={isHudApproved} onValueChange={setIsHudApproved} className="flex flex-row gap-4">
-                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${isHudApproved === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${isHudApproved === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="yes" id="hud-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-bold leading-none text-primary">Yes</span>
                             </label>
-                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${isHudApproved === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${isHudApproved === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="no" id="hud-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-bold leading-none text-primary">No</span>
                             </label>
@@ -1115,11 +1124,11 @@ export default function BorrowerInfoPage() {
               <h2 className="text-xl font-bold text-primary">Has {formData.firstName || "Roney"} completed housing counseling (customized counselor-to-client services) within the last 12 months?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasCounseling} onValueChange={setHasCounseling} className="flex flex-row gap-8">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasCounseling === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasCounseling === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="counseling-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasCounseling === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasCounseling === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="counseling-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-bold leading-none text-primary">No</span>
                   </label>
@@ -1132,19 +1141,19 @@ export default function BorrowerInfoPage() {
                     <h3 className="text-lg font-medium text-primary">What format was it in?</h3>
                     <FieldSet className="w-full">
                       <RadioGroup value={counselingFormat} onValueChange={setCounselingFormat} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border transition-all cursor-pointer ${counselingFormat === 'face_to_face' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border-2 transition-all cursor-pointer ${counselingFormat === 'face_to_face' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                           <RadioGroupItem value="face_to_face" id="counseling-format-f2f" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                           <span className="font-normal leading-tight text-primary">Face-to-Face</span>
                         </label>
-                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border transition-all cursor-pointer ${counselingFormat === 'telephone' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border-2 transition-all cursor-pointer ${counselingFormat === 'telephone' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                           <RadioGroupItem value="telephone" id="counseling-format-phone" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                           <span className="font-normal leading-tight text-primary">Telephone</span>
                         </label>
-                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border transition-all cursor-pointer ${counselingFormat === 'internet' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border-2 transition-all cursor-pointer ${counselingFormat === 'internet' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                           <RadioGroupItem value="internet" id="counseling-format-web" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                           <span className="font-normal leading-tight text-primary">Internet</span>
                         </label>
-                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border transition-all cursor-pointer ${counselingFormat === 'hybrid' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                        <label className={`flex items-center gap-3 px-4 py-4 rounded-md border-2 transition-all cursor-pointer ${counselingFormat === 'hybrid' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                           <RadioGroupItem value="hybrid" id="counseling-format-hybrid" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                           <span className="font-normal leading-tight text-primary">Hybrid</span>
                         </label>
@@ -1159,11 +1168,11 @@ export default function BorrowerInfoPage() {
                         <h3 className="text-lg font-medium text-primary mb-3">Was it provided by a HUD-approved agency?<br /><span className="text-sm font-normal text-on-surface-variant">(If you are unsure, please select &apos;no&apos;)</span></h3>
                         <FieldSet className="w-full max-w-xs">
                           <RadioGroup value={isCounselingHudApproved} onValueChange={setIsCounselingHudApproved} className="flex flex-row gap-4">
-                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${isCounselingHudApproved === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${isCounselingHudApproved === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="yes" id="counseling-hud-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-bold leading-none text-primary">Yes</span>
                             </label>
-                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${isCounselingHudApproved === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                            <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${isCounselingHudApproved === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                               <RadioGroupItem value="no" id="counseling-hud-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                               <span className="font-bold leading-none text-primary">No</span>
                             </label>
@@ -1266,11 +1275,11 @@ export default function BorrowerInfoPage() {
             <h2 className="text-lg font-bold text-primary border-t border-outline-variant/20 pt-6">Does the borrower have any dependents?</h2>
             <FieldSet className="w-full max-w-xs pt-2">
               <RadioGroup value={hasDependents} onValueChange={setHasDependents} className="flex flex-row gap-8">
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasDependents === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasDependents === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="yes" id="dep-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-bold leading-none text-primary">Yes</span>
                 </label>
-                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${hasDependents === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasDependents === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                   <RadioGroupItem value="no" id="dep-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                   <span className="font-bold leading-none text-primary">No</span>
                 </label>
@@ -1313,11 +1322,11 @@ export default function BorrowerInfoPage() {
               </h4>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={creditConsent} onValueChange={setCreditConsent} className="flex flex-col gap-4">
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${creditConsent === 'yes' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${creditConsent === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="yes" id="consent-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-normal leading-none text-primary">Yes</span>
                   </label>
-                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border transition-all cursor-pointer ${creditConsent === 'no' ? 'border-primary bg-primary/5' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
+                  <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${creditConsent === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                     <RadioGroupItem value="no" id="consent-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
                     <span className="font-normal leading-none text-primary">No</span>
                   </label>
@@ -1341,7 +1350,7 @@ export default function BorrowerInfoPage() {
         </div>
 
         {/* SECURITY SIDEBAR */}
-        <div className="col-span-12 lg:col-span-4 space-y-8">
+        <div className="col-span-12 md:col-span-4 space-y-8">
           <div className="bg-white/40 backdrop-blur-xl border border-outline-variant/20 p-8 rounded-xl">
             <ShieldCheck className="text-secondary w-8 h-8 mb-4" />
             <h3 className="font-headline font-bold text-primary text-lg mb-2">Vault-Grade Security</h3>

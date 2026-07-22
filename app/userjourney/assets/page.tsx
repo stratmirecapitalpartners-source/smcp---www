@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, use } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ShieldCheck, Lightbulb, Trash2, Plus } from "lucide-react";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field"
@@ -23,13 +23,16 @@ type OtherAsset = {
   cashValue: string;
 };
 
-export default async function BankingAssetsPage({
+// Removed 'async' to comply with Client Component rules
+export default function BankingAssetsPage({
   searchParams,
 }: {
   searchParams: Promise<{ id?: string }>
 }) {
   const router = useRouter()
-  const params = await searchParams;
+
+  // Unwrap the promise using React's use() hook instead of await
+  const params = use(searchParams);
   const borrowerId = params?.id ?? '';
   const supabase = createClient()
 
@@ -57,19 +60,59 @@ export default async function BankingAssetsPage({
     cashValue: ""
   })
 
-  // Prevent loading if no ID is passed from Page 1
+  // Fetch existing borrower assets and flags from Supabase on mount
   useEffect(() => {
     if (!borrowerId) {
       console.error("No Borrower ID found. Redirecting to start.")
       router.push('/userjourney')
+      return;
     }
-  }, [borrowerId, router])
+
+    const fetchExistingAssets = async () => {
+      const { data, error } = await supabase
+        .from('borrowers')
+        .select('has_banking_assets, banking_assets, has_other_assets, other_assets')
+        .eq('id', borrowerId)
+        .single()
+
+      if (error) {
+        console.error("Failed to fetch existing assets:", error.message)
+        return
+      }
+
+      if (data) {
+        if (data.has_banking_assets) {
+          setHasBankingAssets("yes")
+          setAssets(data.banking_assets || [])
+          if (data.banking_assets && data.banking_assets.length > 0) {
+            setIsAddingAsset(false)
+          }
+        }
+        if (data.has_other_assets) {
+          setHasOtherAssets("yes")
+          setOtherAssets(data.other_assets || [])
+          if (data.other_assets && data.other_assets.length > 0) {
+            setIsAddingOtherAsset(false)
+          }
+        }
+      }
+    }
+
+    fetchExistingAssets()
+  }, [borrowerId, supabase, router])
 
   // --- Banking Asset Handlers ---
   const handleAssetChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target
-    const stateKey = id.replace('asset-', '').replace(/-([a-z])/g, (g) => g[1].toUpperCase())
-    setAssetForm(prev => ({ ...prev, [stateKey]: value }))
+
+    let stateKey = id.replace('asset-', '')
+    if (stateKey === 'type') stateKey = 'assetType'
+    if (stateKey === 'financial-institution') stateKey = 'financialInstitution'
+    if (stateKey === 'account-number') stateKey = 'accountNumber'
+    if (stateKey === 'cash-value') stateKey = 'cashValue'
+
+    const formattedKey = stateKey.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+    setAssetForm(prev => ({ ...prev, [formattedKey]: value }))
   }
 
   const saveAsset = () => {
@@ -97,8 +140,13 @@ export default async function BankingAssetsPage({
   // --- Other Asset Handlers ---
   const handleOtherAssetChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target
-    const stateKey = id.replace('other-asset-', '').replace(/-([a-z])/g, (g) => g[1].toUpperCase())
-    setOtherAssetForm(prev => ({ ...prev, [stateKey]: value }))
+
+    let stateKey = id.replace('other-asset-', '')
+    if (stateKey === 'type') stateKey = 'assetType'
+    if (stateKey === 'cash-value') stateKey = 'cashValue'
+
+    const formattedKey = stateKey.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+    setOtherAssetForm(prev => ({ ...prev, [formattedKey]: value }))
   }
 
   const saveOtherAsset = () => {
@@ -158,14 +206,13 @@ export default async function BankingAssetsPage({
     }
 
     console.log("Assets saved successfully.")
-    // Redirect to the next step (e.g., Liabilities)
-    // router.push(`/userjourney/liabilities?id=${borrowerId}`)
+    // Redirect to the next step (Liabilities) with persistent borrowerId query string
     router.push(`/userjourney/liabilities?id=${borrowerId}`)
   }
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full max-w-5xl mx-auto px-4 md:px-6">
         <header className="mb-12">
           <h1 className="font-headline text-5xl font-extrabold text-primary tracking-tight leading-tight">
             Financial Assets
@@ -175,8 +222,9 @@ export default async function BankingAssetsPage({
           </p>
         </header>
 
+        {/* Updated grid breakpoint from lg to md for reliable multi-column layout */}
         <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest p-10 rounded-xl shadow-sm border border-outline-variant/10 relative overflow-hidden">
+          <div className="col-span-12 md:col-span-8 bg-surface-container-lowest p-8 md:p-10 rounded-xl shadow-sm border border-outline-variant/10 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-secondary/30"></div>
 
             <form className="space-y-8" onSubmit={handleSubmit} suppressHydrationWarning>
@@ -190,14 +238,14 @@ export default async function BankingAssetsPage({
 
                 <FieldSet className="w-full max-w-xs pt-2">
                   <RadioGroup value={hasBankingAssets} onValueChange={setHasBankingAssets} className="flex flex-row gap-8">
-                    <Field orientation="horizontal" className="flex items-center gap-3 bg-surface-container-high px-6 py-3 rounded-md border border-outline-variant/30">
+                    <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasBankingAssets === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                       <RadioGroupItem value="yes" id="assets-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
-                      <FieldLabel htmlFor="assets-yes" className="font-bold cursor-pointer leading-none">Yes</FieldLabel>
-                    </Field>
-                    <Field orientation="horizontal" className="flex items-center gap-3 bg-surface-container-high px-6 py-3 rounded-md border border-outline-variant/30">
+                      <span className="font-bold leading-none text-primary">Yes</span>
+                    </label>
+                    <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasBankingAssets === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                       <RadioGroupItem value="no" id="assets-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
-                      <FieldLabel htmlFor="assets-no" className="font-bold cursor-pointer leading-none">No</FieldLabel>
-                    </Field>
+                      <span className="font-bold leading-none text-primary">No</span>
+                    </label>
                   </RadioGroup>
                 </FieldSet>
 
@@ -247,19 +295,19 @@ export default async function BankingAssetsPage({
                               id="asset-type"
                               value={assetForm.assetType}
                               onChange={handleAssetChange}
-                              className={`w-full px-0 py-2 border-b-2 border-x-0 border-t-0 focus:ring-0 focus:border-secondary text-primary bg-transparent rounded-none ${!assetForm.assetType ? 'border-destructive' : 'border-outline-variant/50'}`}
+                              className={`w-full px-3 py-2 border-b-2 border-x-0 border-t-0 focus:ring-0 focus:border-secondary text-primary bg-white rounded-none ${!assetForm.assetType ? 'border-destructive text-slate-400' : 'border-outline-variant/50'}`}
                             >
-                              <option value="">Select asset type...</option>
-                              <option value="Checking">Checking Account</option>
-                              <option value="Savings">Savings Account</option>
-                              <option value="Certificate of Deposit">Certificate of Deposit</option>
-                              <option value="Mutual Fund">Mutual Fund</option>
-                              <option value="Stock">Stock</option>
-                              <option value="Stock Options">Stock Options</option>
-                              <option value="Bond">Bond</option>
-                              <option value="Retirement Fund">Retirement Fund</option>
-                              <option value="Life Insurance">Life Insurance</option>
-                              <option value="Other">Other</option>
+                              <option value="" disabled className="text-slate-400">Select asset type...</option>
+                              <option value="Checking" className="text-primary bg-white">Checking Account</option>
+                              <option value="Savings" className="text-primary bg-white">Savings Account</option>
+                              <option value="Certificate of Deposit" className="text-primary bg-white">Certificate of Deposit</option>
+                              <option value="Mutual Fund" className="text-primary bg-white">Mutual Fund</option>
+                              <option value="Stock" className="text-primary bg-white">Stock</option>
+                              <option value="Stock Options" className="text-primary bg-white">Stock Options</option>
+                              <option value="Bond" className="text-primary bg-white">Bond</option>
+                              <option value="Retirement Fund" className="text-primary bg-white">Retirement Fund</option>
+                              <option value="Life Insurance" className="text-primary bg-white">Life Insurance</option>
+                              <option value="Other" className="text-primary bg-white">Other</option>
                             </select>
                             {!assetForm.assetType && <span className="text-xs text-destructive mt-1 block">This field is required</span>}
                           </Field>
@@ -332,14 +380,14 @@ export default async function BankingAssetsPage({
 
                 <FieldSet className="w-full max-w-xs pt-2">
                   <RadioGroup value={hasOtherAssets} onValueChange={setHasOtherAssets} className="flex flex-row gap-8">
-                    <Field orientation="horizontal" className="flex items-center gap-3 bg-surface-container-high px-6 py-3 rounded-md border border-outline-variant/30">
+                    <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasOtherAssets === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                       <RadioGroupItem value="yes" id="other-assets-yes" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
-                      <FieldLabel htmlFor="other-assets-yes" className="font-bold cursor-pointer leading-none">Yes</FieldLabel>
-                    </Field>
-                    <Field orientation="horizontal" className="flex items-center gap-3 bg-surface-container-high px-6 py-3 rounded-md border border-outline-variant/30">
+                      <span className="font-bold leading-none text-primary">Yes</span>
+                    </label>
+                    <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasOtherAssets === 'no' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
                       <RadioGroupItem value="no" id="other-assets-no" className="shrink-0 h-4 w-4 border border-primary text-primary focus:ring-secondary" />
-                      <FieldLabel htmlFor="other-assets-no" className="font-bold cursor-pointer leading-none">No</FieldLabel>
-                    </Field>
+                      <span className="font-bold leading-none text-primary">No</span>
+                    </label>
                   </RadioGroup>
                 </FieldSet>
 
@@ -381,16 +429,16 @@ export default async function BankingAssetsPage({
                               id="other-asset-type"
                               value={otherAssetForm.assetType}
                               onChange={handleOtherAssetChange}
-                              className={`w-full px-0 py-2 border-b-2 border-x-0 border-t-0 focus:ring-0 focus:border-secondary text-primary bg-transparent rounded-none ${!otherAssetForm.assetType ? 'border-destructive' : 'border-outline-variant/50'}`}
+                              className={`w-full px-3 py-2 border-b-2 border-x-0 border-t-0 focus:ring-0 focus:border-secondary text-primary bg-white rounded-none ${!otherAssetForm.assetType ? 'border-destructive text-slate-400' : 'border-outline-variant/50'}`}
                             >
-                              <option value="">Select asset type...</option>
-                              <option value="Earnest Money">Earnest Money</option>
-                              <option value="Employer Assistance">Employer Assistance</option>
-                              <option value="Relocation Funds">Relocation Funds</option>
-                              <option value="Rent Credit">Rent Credit</option>
-                              <option value="Sweat Equity">Sweat Equity</option>
-                              <option value="Trade Equity">Trade Equity</option>
-                              <option value="Other">Other</option>
+                              <option value="" disabled className="text-slate-400">Select asset type...</option>
+                              <option value="Earnest Money" className="text-primary bg-white">Earnest Money</option>
+                              <option value="Employer Assistance" className="text-primary bg-white">Employer Assistance</option>
+                              <option value="Relocation Funds" className="text-primary bg-white">Relocation Funds</option>
+                              <option value="Rent Credit" className="text-primary bg-white">Rent Credit</option>
+                              <option value="Sweat Equity" className="text-primary bg-white">Sweat Equity</option>
+                              <option value="Trade Equity" className="text-primary bg-white">Trade Equity</option>
+                              <option value="Other" className="text-primary bg-white">Other</option>
                             </select>
                             {!otherAssetForm.assetType && <span className="text-xs text-destructive mt-1 block">This field is required</span>}
                           </Field>
@@ -448,7 +496,7 @@ export default async function BankingAssetsPage({
           </div>
 
           {/* SECURITY SIDEBAR */}
-          <div className="col-span-12 lg:col-span-4 space-y-8">
+          <div className="col-span-12 md:col-span-4 space-y-8">
             <div className="bg-white/40 backdrop-blur-xl border border-outline-variant/20 p-8 rounded-xl">
               <ShieldCheck className="text-secondary w-8 h-8 mb-4" />
               <h3 className="font-headline font-bold text-primary text-lg mb-2">Vault-Grade Security</h3>

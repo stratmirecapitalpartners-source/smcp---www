@@ -1,14 +1,15 @@
 "use client"
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  User, 
-  Wallet, 
-  CreditCard, 
+import {
+  User,
+  Wallet,
+  CreditCard,
   Home,
-  HelpCircle, 
-  Settings 
+  HelpCircle,
+  Settings,
+  FileText
 } from "lucide-react";
 
 export default function UserJourneyLayout({
@@ -16,12 +17,20 @@ export default function UserJourneyLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Read the current URL path
+  // Read the current URL path and search params
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Extract the active borrower ID from the URL first, fallback to sessionStorage if available
+  const urlBorrowerId = searchParams.get('id');
+  const activeBorrowerId = urlBorrowerId || (typeof window !== 'undefined' ? sessionStorage.getItem('activeBorrowerId') : null);
+
+  // Construct a persistent query string to maintain state across steps
+  const queryString = activeBorrowerId ? `?id=${activeBorrowerId}` : '';
 
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col antialiased">
-      
+
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-72 bg-surface-container-low border-r border-outline-variant/10 p-6 fixed h-[calc(100vh-72px)]">
@@ -29,32 +38,31 @@ export default function UserJourneyLayout({
             <h2 className="font-headline text-lg font-black text-primary">Application Journey</h2>
           </div>
 
-          {/* Navigation Engine */}
+          {/* Navigation Engine with Persistent Query Parameters */}
           <nav className="flex-1 space-y-2">
-            <SidebarItem 
-              href="/userjourney" 
-              icon={<User size={20}/>} 
-              label="Borrower Info" 
-              pathname={pathname} 
+            <SidebarItem
+              href={`/userjourney${queryString}`}
+              icon={<User size={20} />}
+              label="Borrower Info"
+              pathname={pathname}
             />
-            <SidebarItem 
-              href="/userjourney/assets" 
-              icon={<Wallet size={20}/>} 
-              label="Financial Assets" 
-              pathname={pathname} 
+            <SidebarItem
+              href={`/userjourney/assets${queryString}`}
+              icon={<Wallet size={20} />}
+              label="Financial Assets"
+              pathname={pathname}
             />
-            <SidebarItem 
-              href="/userjourney/liabilities" 
-              icon={<CreditCard size={20}/>} 
-              label="Financial Liabilities" 
-              pathname={pathname} 
+            <SidebarItem
+              href={`/userjourney/liabilities${queryString}`}
+              icon={<CreditCard size={20} />}
+              label="Financial Liabilities"
+              pathname={pathname}
             />
-            {/* You can add the rest of your steps here as we build them */}
-            <SidebarItem 
-              href="/userjourney/real-estate" 
-              icon={<Home size={20}/>} 
-              label="Real Estate" 
-              pathname={pathname} 
+            <SidebarItem
+              href={`/userjourney/documents${queryString}`}
+              icon={<FileText size={20} />}
+              label="Documents"
+              pathname={pathname}
             />
           </nav>
 
@@ -78,27 +86,28 @@ export default function UserJourneyLayout({
 }
 
 // Upgraded SidebarItem with Next.js Link and dynamic active state
-function SidebarItem({ 
-  href, 
-  icon, 
-  label, 
-  pathname 
-}: { 
-  href: string, 
-  icon: React.ReactNode, 
-  label: string, 
-  pathname: string 
+function SidebarItem({
+  href,
+  icon,
+  label,
+  pathname
+}: {
+  href: string,
+  icon: React.ReactNode,
+  label: string,
+  pathname: string
 }) {
-  // Determine if this item matches the current URL exactly
-  const isActive = pathname === href;
+  // Extract path base (ignoring query params) to accurately determine active status
+  const currentBasePath = pathname.split('?')[0];
+  const targetBasePath = href.split('?')[0];
+  const isActive = currentBasePath === targetBasePath;
 
   return (
     <Link href={href}>
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all cursor-pointer mb-1 ${
-        isActive 
-          ? 'bg-white shadow-sm text-primary font-bold border border-outline-variant/10' 
-          : 'text-on-surface-variant hover:bg-surface-variant/50 hover:text-primary'
-      }`}>
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all cursor-pointer mb-1 ${isActive
+        ? 'bg-white shadow-sm text-primary font-bold border border-outline-variant/10'
+        : 'text-on-surface-variant hover:bg-surface-variant/50 hover:text-primary'
+        }`}>
         <span className={isActive ? 'text-secondary' : 'text-on-surface-variant'}>{icon}</span>
         <span className="text-sm font-headline">{label}</span>
       </div>
