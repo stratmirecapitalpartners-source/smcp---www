@@ -113,7 +113,8 @@ export default function BusinessLoanPage() {
         }
 
         console.log("Business Application Secured. ID:", data.id)
-        router.push(`/userjourney/success`)
+
+        router.push(`/dashboard`)
     }
 
     return (

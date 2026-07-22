@@ -29,7 +29,6 @@ export default function UpdatePasswordPage() {
             setStatus('error');
         } else {
             setStatus('success');
-            // Force redirection to login or dashboard after a short delay
             setTimeout(() => {
                 router.push('/login');
             }, 3000);
