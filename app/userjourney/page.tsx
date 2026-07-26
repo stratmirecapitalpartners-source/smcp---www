@@ -1,6 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowRight, ArrowLeft, ShieldCheck, Lightbulb, Trash2, Plus, AlertTriangle, Info } from "lucide-react";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -35,14 +35,16 @@ type IncomeSource = {
   monthlyIncome: string;
 };
 
-export default function BorrowerInfoPage() {
+// 1. MAIN LOGIC REFACTORED AS A CHILD COMPONENT
+function BorrowerInfoForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [borrowerId, setBorrowerId] = useState<string | null>(null)
 
-  // ✅ Added Hydration State to prevent race conditions
+  // Hydration State to prevent race conditions
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Referral State
@@ -124,10 +126,10 @@ export default function BorrowerInfoPage() {
     email: "", phone: "", ssn: "", birthDate: "",
   })
 
-  // 1. HYDRATION & SMART ROUTING
+  // HYDRATION & SMART ROUTING
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const isForceNew = params.get('new') === 'true';
+    // Utilize the Next.js router state natively instead of window.location
+    const isForceNew = searchParams.get('new') === 'true';
     const savedLocalId = localStorage.getItem('currentApplicationId');
 
     if (savedLocalId && !isForceNew) {
@@ -179,14 +181,12 @@ export default function BorrowerInfoPage() {
       setMaritalStatus(parsed.maritalStatus || "");
     }
 
-    // ✅ Signal that data loading is complete so persistence can begin
     setIsHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, router]);
 
-  // 2. PERSISTENCE: Save to browser memory automatically as they type
+  // PERSISTENCE: Save to browser memory automatically as they type
   useEffect(() => {
-    // ✅ Guard: Do not overwrite storage if hydration hasn't finished
     if (!isHydrated) return;
 
     const draft = {
@@ -199,7 +199,7 @@ export default function BorrowerInfoPage() {
     };
     sessionStorage.setItem('borrowerInfoDraft', JSON.stringify(draft));
   }, [
-    isHydrated, // ✅ Added dependency
+    isHydrated,
     formData, addresses, jobs, dependents, additionalIncomes, mailingAddress, referralCode,
     hasOtherNames, hasDependents, hasBeenEmployed, hasAdditionalIncome,
     hasMilitaryService, militaryStatus, militaryExpirationDate,
@@ -578,7 +578,7 @@ export default function BorrowerInfoPage() {
             </FieldSet>
 
             {/* ADDRESS HISTORY SECTION */}
-            <h2 className="text-2xl font-black text-primary border-t border-outline-variant/20 pt-8">{formData.firstName || "Roney"}&apos;s Addresses</h2>
+            <h2 className="text-2xl font-black text-primary border-t border-outline-variant/20 pt-8">{formData.firstName || "Borrower"}&apos;s Addresses</h2>
 
             <div className="bg-red-50 border border-red-200 text-red-500 p-4 rounded-md flex items-center gap-3 font-medium mt-4">
               <AlertTriangle size={20} className="shrink-0" />
@@ -657,7 +657,7 @@ export default function BorrowerInfoPage() {
                       )}
                       <label className="flex items-center gap-3 border border-outline-variant/30 px-4 rounded-md bg-white text-sm font-medium whitespace-nowrap h-[42px] cursor-pointer shadow-sm hover:bg-slate-50 transition-colors">
                         <input type="checkbox" id="addr-is-current" checked={addrForm.isCurrent} onChange={handleAddressChange} className="w-4 h-4 cursor-pointer text-secondary" />
-                        This is {formData.firstName || "Roney"}&apos;s current residence.
+                        This is {formData.firstName || "the borrower"}&apos;s current residence.
                       </label>
                     </div>
                   </div>
@@ -711,7 +711,7 @@ export default function BorrowerInfoPage() {
 
             {/* MAILING ADDRESS SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-xl font-bold text-primary">Is {formData.firstName || "Roney"}&apos;s mailing address different from their current address?</h2>
+              <h2 className="text-xl font-bold text-primary">Is {formData.firstName || "the borrower"}&apos;s mailing address different from their current address?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasDifferentMailingAddress} onValueChange={setHasDifferentMailingAddress} className="flex flex-row gap-8">
                   <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasDifferentMailingAddress === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -767,7 +767,7 @@ export default function BorrowerInfoPage() {
 
             {/* EMPLOYMENT HISTORY SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-2xl font-black text-primary">Has {formData.firstName || "Roney"} been employed in the last two years?</h2>
+              <h2 className="text-2xl font-black text-primary">Has {formData.firstName || "the borrower"} been employed in the last two years?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasBeenEmployed} onValueChange={setHasBeenEmployed} className="flex flex-row gap-8">
                   <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasBeenEmployed === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -870,7 +870,7 @@ export default function BorrowerInfoPage() {
 
             {/* ADDITIONAL INCOME SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-2xl font-black text-primary">Does {formData.firstName || "Roney"} have any additional income sources?</h2>
+              <h2 className="text-2xl font-black text-primary">Does {formData.firstName || "the borrower"} have any additional income sources?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasAdditionalIncome} onValueChange={setHasAdditionalIncome} className="flex flex-row gap-8">
                   <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasAdditionalIncome === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -980,7 +980,7 @@ export default function BorrowerInfoPage() {
 
             {/* MILITARY SERVICE SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-xl font-bold text-primary">Did {formData.firstName || "Roney"} (or their deceased spouse) ever serve, or are they currently serving, in the United States Armed Forces?</h2>
+              <h2 className="text-xl font-bold text-primary">Did {formData.firstName || "the borrower"} (or their deceased spouse) ever serve, or are they currently serving, in the United States Armed Forces?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasMilitaryService} onValueChange={setHasMilitaryService} className="flex flex-row gap-8">
                   <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasMilitaryService === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -996,7 +996,7 @@ export default function BorrowerInfoPage() {
 
               {hasMilitaryService === "yes" && (
                 <div className="pt-4 space-y-6">
-                  <h2 className="text-lg font-bold text-primary">What is {formData.firstName || "Roney"}&apos;s military status?</h2>
+                  <h2 className="text-lg font-bold text-primary">What is {formData.firstName || "the borrower"}&apos;s military status?</h2>
                   <FieldSet className="w-full">
                     <RadioGroup value={militaryStatus} onValueChange={setMilitaryStatus} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <label className={`flex items-start gap-3 px-6 py-4 rounded-md border-2 transition-all cursor-pointer ${militaryStatus === 'active_duty' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -1030,7 +1030,7 @@ export default function BorrowerInfoPage() {
 
             {/* HOMEOWNERSHIP EDUCATION SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-xl font-bold text-primary">Has {formData.firstName || "Roney"} completed home-ownership education (group or web-based classes) within the last 12 months?</h2>
+              <h2 className="text-xl font-bold text-primary">Has {formData.firstName || "the borrower"} completed home-ownership education (group or web-based classes) within the last 12 months?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasEducation} onValueChange={setHasEducation} className="flex flex-row gap-8">
                   <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasEducation === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -1121,7 +1121,7 @@ export default function BorrowerInfoPage() {
 
             {/* HOUSING COUNSELING SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-xl font-bold text-primary">Has {formData.firstName || "Roney"} completed housing counseling (customized counselor-to-client services) within the last 12 months?</h2>
+              <h2 className="text-xl font-bold text-primary">Has {formData.firstName || "the borrower"} completed housing counseling (customized counselor-to-client services) within the last 12 months?</h2>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={hasCounseling} onValueChange={setHasCounseling} className="flex flex-row gap-8">
                   <label className={`flex items-center gap-3 px-6 py-3 rounded-md border-2 transition-all cursor-pointer ${hasCounseling === 'yes' ? 'border-primary bg-slate-50' : 'bg-surface-container-high border-outline-variant/30 hover:brightness-95'}`}>
@@ -1227,7 +1227,7 @@ export default function BorrowerInfoPage() {
 
             {/* LANGUAGE PREFERENCE SECTION */}
             <div className="border-t border-outline-variant/20 pt-10 space-y-6">
-              <h2 className="text-xl font-bold text-primary">What is {formData.firstName || "Roney"}&apos;s language preference?</h2>
+              <h2 className="text-xl font-bold text-primary">What is {formData.firstName || "the borrower"}&apos;s language preference?</h2>
               <p className="text-sm text-on-surface-variant leading-relaxed">
                 Your loan transaction is likely to be conducted in English. This question requests information to see if communications are available to assist you in your preferred language. Please be aware that communications may NOT be available in your preferred language.
               </p>
@@ -1370,4 +1370,17 @@ export default function BorrowerInfoPage() {
       </div>
     </div>
   );
+}
+
+// 2. PARENT COMPONENT THAT WRAPS IN SUSPENSE
+export default function BorrowerInfoPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-12 flex justify-center items-center">
+        <p className="text-primary font-medium text-lg animate-pulse">Loading personal identity profile...</p>
+      </div>
+    }>
+      <BorrowerInfoForm />
+    </Suspense>
+  )
 }

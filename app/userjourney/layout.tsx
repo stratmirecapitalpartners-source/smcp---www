@@ -1,5 +1,5 @@
 "use client"
-import React from 'react';
+import React, { Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -12,11 +12,8 @@ import {
   FileText
 } from "lucide-react";
 
-export default function UserJourneyLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+// 1. The Child Component handling the dynamic search parameters
+function UserJourneyLayoutContent({ children }: { children: React.ReactNode }) {
   // Read the current URL path and search params
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,7 +27,6 @@ export default function UserJourneyLayout({
 
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col antialiased">
-
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-72 bg-surface-container-low border-r border-outline-variant/10 p-6 fixed h-[calc(100vh-72px)]">
@@ -82,6 +78,25 @@ export default function UserJourneyLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+// 2. The Parent Layout Component establishing the Suspense boundary
+export default function UserJourneyLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-primary font-bold animate-pulse">Loading Application Journey...</p>
+      </div>
+    }>
+      <UserJourneyLayoutContent>
+        {children}
+      </UserJourneyLayoutContent>
+    </Suspense>
   );
 }
 

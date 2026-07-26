@@ -1,6 +1,6 @@
 "use client"
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@/lib/supabase";
 import { UploadCloud, FileText, CheckCircle, AlertCircle, ShieldCheck, ArrowRight } from 'lucide-react';
 
@@ -25,8 +25,10 @@ const REQUIRED_DOCUMENTS = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
-export default function DocumentUploadPage() {
+// 1. MAIN LOGIC REFACTORED AS A CHILD COMPONENT
+function DocumentUploadForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const supabase = createClient();
 
     const [borrowerId, setBorrowerId] = useState<string | null>(null);
@@ -34,17 +36,11 @@ export default function DocumentUploadPage() {
     const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
     const [isFinalizing, setIsFinalizing] = useState(false);
 
-    // Retrieve the application ID from local storage (saved during the previous steps)
+    // Retrieve the application ID from local storage or URL parameters safely
     useEffect(() => {
-        // 1. Check your app's native sessionStorage key
         const sessionId = sessionStorage.getItem('activeBorrowerId');
-
-        // 2. Fallback to localStorage just in case
         const localId = localStorage.getItem('currentApplicationId');
-
-        // 3. Fallback to URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const urlId = params.get('id');
+        const urlId = searchParams.get('id');
 
         if (urlId) {
             setBorrowerId(urlId);
@@ -53,7 +49,7 @@ export default function DocumentUploadPage() {
         } else if (localId) {
             setBorrowerId(localId);
         }
-    }, []);
+    }, [searchParams]);
 
     const handleFileChange = (docId: string, selectedFile: File | null) => {
         if (!selectedFile) return;
@@ -88,11 +84,13 @@ export default function DocumentUploadPage() {
 
             // 2. Save the reference to the borrower's database profile
             // First, get existing documents
-            const { data: borrowerData } = await supabase
+            const { data: borrowerData, error: fetchError } = await supabase
                 .from('borrowers')
                 .select('uploaded_documents')
                 .eq('id', borrowerId)
                 .single();
+
+            if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
             const existingDocs = borrowerData?.uploaded_documents || {};
             const updatedDocs = { ...existingDocs, [docId]: uploadData.path };
@@ -120,6 +118,7 @@ export default function DocumentUploadPage() {
             router.push('/dashboard');
         }, 1000);
     };
+
     if (!borrowerId) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-center">
@@ -217,5 +216,21 @@ export default function DocumentUploadPage() {
 
             </div>
         </div>
+    );
+}
+
+// 2. PARENT COMPONENT THAT WRAPS IN SUSPENSE
+export default function DocumentUploadPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex justify-center items-center bg-slate-50">
+                <div className="text-center">
+                    <p className="text-primary font-bold text-lg animate-pulse mb-2">Connecting to Secure Vault...</p>
+                    <p className="text-sm text-slate-500">Preparing document upload portal</p>
+                </div>
+            </div>
+        }>
+            <DocumentUploadForm />
+        </Suspense>
     );
 }

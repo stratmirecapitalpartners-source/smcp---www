@@ -71,6 +71,17 @@ export default function BusinessLoanPage() {
         e.preventDefault()
         setIsSubmitting(true)
 
+        // 1. Verify the user is authenticated before attempting to insert
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            console.error("Authentication error: You must be logged in to submit an application.");
+            alert("Your session has expired. Please log in again.");
+            router.push('/login');
+            setIsSubmitting(false);
+            return;
+        }
+
         const payload = {
             funding_amount: formData.fundingAmount,
             monthly_sales: formData.monthlySales,
@@ -99,6 +110,7 @@ export default function BusinessLoanPage() {
             source: formData.source
         }
 
+        // 2. Execute the insert
         const { data, error } = await supabase
             .from('business_loans')
             .insert([payload])
@@ -109,11 +121,11 @@ export default function BusinessLoanPage() {
 
         if (error) {
             console.error("Database insertion failed:", error.message)
+            alert(`Submission failed: ${error.message}`)
             return
         }
 
-        console.log("Business Application Secured. ID:", data.id)
-
+        console.log("Business Application Secured. ID:", data?.id)
         router.push(`/dashboard`)
     }
 
