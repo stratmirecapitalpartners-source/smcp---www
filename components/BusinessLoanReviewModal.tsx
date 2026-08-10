@@ -1,6 +1,7 @@
 "use client"
-import React from 'react';
-import { X, User, Briefcase, Building2, ShieldCheck, MapPin, Lightbulb } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, User, Briefcase, Building2, ShieldCheck, MapPin, Lightbulb, Download, Loader2 } from 'lucide-react';
+import { downloadBusinessApplicationWordDoc, ApplicationData } from "@/lib/generateWordDoc";
 
 interface BusinessLoanReviewModalProps {
     loan: any;
@@ -8,9 +9,24 @@ interface BusinessLoanReviewModalProps {
 }
 
 export default function BusinessLoanReviewModal({ loan, onClose }: BusinessLoanReviewModalProps) {
+    const [isDownloading, setIsDownloading] = useState(false);
+
     if (!loan) return null;
 
     const formatDoc = (val: boolean) => val ? "Yes" : "No";
+
+    const handleDownload = async () => {
+        setIsDownloading(true);
+        try {
+            // Pass the loan data to the document generator
+            await downloadBusinessApplicationWordDoc(loan as ApplicationData);
+        } catch (error) {
+            console.error("Failed to generate Word document:", error);
+            alert("Failed to generate document. Please try again.");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -104,6 +120,14 @@ export default function BusinessLoanReviewModal({ loan, onClose }: BusinessLoanR
 
                 {/* Footer Actions */}
                 <div className="px-6 py-4 border-t border-slate-200 bg-white flex justify-end gap-3">
+                    <button
+                        onClick={handleDownload}
+                        disabled={isDownloading}
+                        className="flex items-center gap-2 bg-[#042f24] hover:bg-[#0a6c50] text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
+                    >
+                        {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {isDownloading ? "Generating..." : "Download Word Doc"}
+                    </button>
                     <button onClick={onClose} className="px-6 py-2.5 text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors">
                         Close Viewer
                     </button>
