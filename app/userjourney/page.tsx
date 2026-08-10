@@ -1318,7 +1318,7 @@ function BorrowerInfoForm() {
                 <Input id="input-ssn" type="password" placeholder="XXX-XX-XXXX" required value={formData.ssn} onChange={handleInputChange} />
               </Field>
               <h4 className="text-sm text-on-surface-variant pt-4">
-                You understand that by clicking YES immediately following this notice, you are providing &apos;written instructions&apos; to MVP MortgagePros LLC under the Fair Credit Reporting Act authorizing MVP MortgagePros LLC to obtain information from your personal credit profile or other Information from Experian and/or other credit bureaus. You authorize MVP MortgagePros LLC to obtain such information solely in accordance with a Mortgage Loan Application.
+                You understand that by clicking YES immediately following this notice, you are providing &apos;written instructions&apos; to Stratmire Capital Partners LLC under the Fair Credit Reporting Act authorizing Stratmire Capital Partners LLC to obtain information from your personal credit profile or other Information from Experian and/or other credit bureaus. You authorize Stratmire Capital Partners LLC to obtain such information solely in accordance with a Mortgage Loan Application.
               </h4>
               <FieldSet className="w-full max-w-xs pt-2">
                 <RadioGroup value={creditConsent} onValueChange={setCreditConsent} className="flex flex-col gap-4">

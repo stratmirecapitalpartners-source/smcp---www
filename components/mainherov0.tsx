@@ -1,20 +1,43 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import LoanSelectionModal from '@/components/LoanPopup'
 import MeetingSelectionModal from '@/components/MeetingSelectionModal'
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { LayoutDashboard } from 'lucide-react'; // Added an icon for the dashboard button
 
 const Mainherov0 = () => {
   const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
   const [isMeetModalOpen, setIsMeetModalOpen] = useState(false);
 
-  // New state to control the scenario path selection
+  // State to control the scenario path selection
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+
+  // New state to track if a user is currently authenticated
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
   const [isRouting, setIsRouting] = useState(false);
+
+  // Proactively check auth state on component mount
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
+    };
+
+    checkUser();
+
+    // Set up a listener for real-time auth changes (e.g., if they log out in another tab)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   // Executes only if they select "As a Partner"
   const handlePartnerScenarioClick = async () => {
@@ -66,7 +89,7 @@ const Mainherov0 = () => {
               solutions designed to help you achieve your financial ambitions with precision and confidence.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-6">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-6">
 
               <button
                 onClick={() => setIsLoanModalOpen(true)}
@@ -83,12 +106,23 @@ const Mainherov0 = () => {
               </button>
 
               {/* Triggers the new selection modal */}
-              <button
+              {/* <button
                 onClick={() => setIsScenarioModalOpen(true)}
                 className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-3.5 rounded-md font-bold transition-all backdrop-blur-sm flex items-center gap-2"
               >
                 Submit a Loan Scenario
-              </button>
+              </button> */}
+
+              {/* Conditional Dashboard Button - Renders ONLY if logged in */}
+              {isLoggedIn && (
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="bg-[#0a6c50] hover:bg-[#042f24] text-white border border-[#0a6c50] px-8 py-3.5 rounded-md font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  <LayoutDashboard size={20} />
+                  My Dashboard
+                </button>
+              )}
 
             </div>
           </div>
@@ -106,7 +140,7 @@ const Mainherov0 = () => {
         onClose={() => setIsMeetModalOpen(false)}
       />
 
-      {/* New Scenario Path Selection Modal */}
+      {/* Scenario Path Selection Modal */}
       {isScenarioModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in duration-200">

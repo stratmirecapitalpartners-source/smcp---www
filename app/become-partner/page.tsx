@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { Loader2, User, ShieldAlert, Briefcase, FileSignature, CheckCircle2 } from 'lucide-react';
@@ -11,16 +11,18 @@ function PartnerForm() {
     const supabase = createClient();
     const searchParams = useSearchParams();
 
-    // Grab the tier from the URL (defaults to Starter if someone bypasses the pricing page)
     const urlTier = searchParams.get('tier') || 'Starter';
 
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Track if the user is already authenticated
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
     const [formData, setFormData] = useState({
         password: '',
-        partnerTier: urlTier, // Initialized from URL
+        partnerTier: urlTier,
         fullLegalName: '', businessName: '', phone: '', email: '',
         dob: '', ssnLast4: '', homeAddress: '',
         referredPartnerName: '', referredPartnerCode: '',
@@ -28,6 +30,25 @@ function PartnerForm() {
         currentOccupation: '', companyName: '', yearsExperience: '', relevantExperience: '',
         acknowledgment: false, signature: ''
     });
+
+    // Proactively check for an existing session
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setCurrentUser(user);
+                setFormData(prev => ({
+                    ...prev,
+                    email: user.email || '',
+                    // Pre-fill name if available from borrower profile
+                    fullLegalName: user.user_metadata?.first_name
+                        ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`
+                        : ''
+                }));
+            }
+        };
+        checkSession();
+    }, [supabase]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -51,48 +72,74 @@ function PartnerForm() {
         setError(null);
 
         try {
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: formData.email,
-                password: formData.password,
-            });
+            let targetUserId = null;
+            let targetEmail = formData.email;
 
-            if (authError) throw authError;
-
-            if (authData.user) {
-                const nameParts = formData.fullLegalName.trim().split(' ');
-                const firstName = nameParts[0];
-                const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'N/A';
-
-                const { error: dbError } = await supabase
-                    .from('loan_partners')
-                    .insert([{
-                        id: authData.user.id,
-                        email: formData.email,
-                        first_name: firstName,
-                        last_name: lastName,
-                        phone: formData.phone,
-                        business_name: formData.businessName,
-                        signature_name: formData.signature,
-                        referring_partner_name: formData.referredPartnerName,
-                        referring_partner_code: formData.referredPartnerCode,
-                        partner_tier: formData.partnerTier, // Submits the hidden URL value
-                        dob: formData.dob,
-                        ssn_last_4: formData.ssnLast4,
-                        home_address: formData.homeAddress,
-                        felony_history: formData.felonyHistory === 'yes',
-                        bankruptcy_history: formData.bankruptcyHistory === 'yes',
-                        current_occupation: formData.currentOccupation,
-                        company_name: formData.companyName,
-                        years_experience: formData.yearsExperience,
-                        relevant_experience: formData.relevantExperience,
-                        partner_code: generateReferralCode(formData.email),
-                        status: 'PENDING'
-                    }]);
-
-                if (dbError) throw dbError;
-                await supabase.auth.signOut();
-                setIsSubmitted(true);
+            // SCENARIO 1: User is already logged in (e.g., an existing borrower)
+            if (currentUser) {
+                targetUserId = currentUser.id;
             }
+            // SCENARIO 2: Brand new user
+            else {
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: formData.email,
+                    password: formData.password,
+                });
+
+                if (authError) {
+                    // Intercept the specific "already registered" error
+                    if (authError.message.toLowerCase().includes('already registered')) {
+                        throw new Error("An account with this email already exists. Please log in first to upgrade your account to a Partner.");
+                    }
+                    throw authError;
+                }
+
+                if (!authData.user) throw new Error("Authentication failed. Please try again.");
+                targetUserId = authData.user.id;
+            }
+
+            // Extract Name
+            const nameParts = formData.fullLegalName.trim().split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'N/A';
+
+            // Insert the Partner Profile using the secured ID
+            const { error: dbError } = await supabase
+                .from('loan_partners')
+                .insert([{
+                    id: targetUserId,
+                    email: targetEmail,
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone: formData.phone,
+                    business_name: formData.businessName,
+                    signature_name: formData.signature,
+                    referring_partner_name: formData.referredPartnerName,
+                    referring_partner_code: formData.referredPartnerCode,
+                    partner_tier: formData.partnerTier,
+                    dob: formData.dob,
+                    ssn_last_4: formData.ssnLast4,
+                    home_address: formData.homeAddress,
+                    felony_history: formData.felonyHistory === 'yes',
+                    bankruptcy_history: formData.bankruptcyHistory === 'yes',
+                    current_occupation: formData.currentOccupation,
+                    company_name: formData.companyName,
+                    years_experience: formData.yearsExperience,
+                    relevant_experience: formData.relevantExperience,
+                    partner_code: generateReferralCode(targetEmail),
+                    status: 'PENDING'
+                }]);
+
+            if (dbError) throw dbError;
+
+            // If they were a brand new user, sign them out so they must log back in for security.
+            // If they are an existing user, keep their session active.
+            if (!currentUser) {
+                await supabase.auth.signOut();
+            }
+
+            setIsSubmitted(true);
+
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -113,17 +160,24 @@ function PartnerForm() {
 
     return (
         <div className="w-full max-w-3xl">
-            {error && <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl font-medium border border-red-200">{error}</div>}
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl font-medium border border-red-200 flex flex-col items-center text-center gap-2">
+                    <span>{error}</span>
+                    {error.includes("already exists") && (
+                        <Link href="/become-partner/login" className="inline-block mt-2 bg-red-100 text-red-800 px-4 py-2 rounded-lg font-bold hover:bg-red-200 transition-colors">
+                            Log In Here
+                        </Link>
+                    )}
+                </div>
+            )}
 
             <form onSubmit={handlePartnerSignup} className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
 
-                {/* Visual confirmation of the selected tier */}
                 <div className="bg-[#042f24] text-white p-4 rounded-xl flex items-center justify-between mb-8">
                     <span className="font-medium text-emerald-100">Selected Partnership Level:</span>
                     <span className="font-black text-lg tracking-wider uppercase">{formData.partnerTier}</span>
                 </div>
 
-                {/* APPLICANT INFORMATION */}
                 <section>
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2"><User size={20} className="text-[#0a6c50]" /> Applicant Information </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -139,10 +193,24 @@ function PartnerForm() {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Phone Number *</label>
                             <input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" />
                         </div>
-                        <div>
+
+                        {/* Dynamic Email Field */}
+                        <div className="relative">
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address *</label>
-                            <input type="email" name="email" required value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" />
+                            <input
+                                type="email"
+                                name="email"
+                                required
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                disabled={!!currentUser}
+                                className={`w-full px-4 py-3 rounded-xl border border-slate-200 outline-none transition-all ${currentUser ? 'bg-emerald-50/50 text-slate-500 cursor-not-allowed border-emerald-100' : 'bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#0a6c50]'}`}
+                            />
+                            {currentUser && (
+                                <span className="absolute right-3 top-9 text-emerald-600 text-[10px] font-bold uppercase tracking-widest bg-emerald-100 px-2 py-1 rounded">Verified</span>
+                            )}
                         </div>
+
                         <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Date of Birth *</label>
                             <input type="date" name="dob" required value={formData.dob} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" />
@@ -167,7 +235,6 @@ function PartnerForm() {
                     </div>
                 </section>
 
-                {/* COMPLIANCE & DISCLOSURES */}
                 <section>
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2"><ShieldAlert size={20} className="text-[#0a6c50]" /> Compliance & Disclosures </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -188,7 +255,6 @@ function PartnerForm() {
                     </div>
                 </section>
 
-                {/* PROFESSIONAL BACKGROUND */}
                 <section>
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2"><Briefcase size={20} className="text-[#0a6c50]" /> Professional Background </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -220,7 +286,6 @@ function PartnerForm() {
                     </div>
                 </section>
 
-                {/* AGREEMENT & ACKNOWLEDGMENT */}
                 <section className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-200 pb-2"><FileSignature size={20} className="text-[#0a6c50]" /> Agreement & Acknowledgment </h3>
 
@@ -245,13 +310,15 @@ function PartnerForm() {
                     </div>
                 </section>
 
-                {/* ACCOUNT SECURITY */}
-                <section className="pt-4 border-t border-slate-100">
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Create Account Password *</label>
-                    <input type="password" name="password" required minLength={6} value={formData.password} onChange={handleInputChange} className="w-full max-w-md px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="Secure password for portal access" />
-                </section>
+                {/* Dynamically hide the password field if they are already an authenticated user */}
+                {!currentUser && (
+                    <section className="pt-4 border-t border-slate-100">
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Create Account Password *</label>
+                        <input type="password" name="password" required minLength={6} value={formData.password} onChange={handleInputChange} className="w-full max-w-md px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="Secure password for portal access" />
+                    </section>
+                )}
 
-                <button type="submit" disabled={loading} className="w-full bg-[#0a6c50] text-white font-black py-4 rounded-xl">
+                <button type="submit" disabled={loading} className="w-full bg-[#0a6c50] text-white font-black py-4 rounded-xl hover:bg-[#042f24] transition-colors shadow-lg disabled:opacity-50">
                     {loading ? <Loader2 className="animate-spin mx-auto" /> : "Submit Application"}
                 </button>
             </form>
@@ -262,7 +329,6 @@ function PartnerForm() {
 export default function BecomePartnerPage() {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans py-12">
-            {/* Suspense boundary is required by Next.js when using useSearchParams() */}
             <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="w-10 h-10 animate-spin text-[#0a6c50]" /></div>}>
                 <PartnerForm />
             </Suspense>

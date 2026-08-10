@@ -19,33 +19,32 @@ type BusinessLoanApplication = {
   created_at: string;
   status: string;
   legal_business_name: string;
-  funding_amount: string;
+  // Temporarily removed funding_amount to match current DB schema and resolve 400 errors
 };
 
 export default function MyLoanDashboard() {
   const router = useRouter();
   const supabase = createClient();
-  const [userName, setUserName] = useState<string>("Roney Gajjar");
+  const [userName, setUserName] = useState<string>("Borrower");
   const [applications, setApplications] = useState<StandardLoanApplication[]>([]);
   const [businessApplications, setBusinessApplications] = useState<BusinessLoanApplication[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // New state to handle the loan selection modal
+  // Modal State
   const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchUserDashboard() {
-      // 1. Get the current logged-in user
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user?.user_metadata?.first_name) {
         setUserName(`${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`);
       } else if (user?.email) {
-        setUserName(user.email); // Fallback to email if name isn't set
+        setUserName(user.email);
       }
 
       if (user?.email) {
-        // 2. Fetch Standard Loan applications (borrowers table)
+        // Fetch Standard Loan applications
         const { data: standardData, error: standardError } = await supabase
           .from('borrowers')
           .select('id, created_at, uploaded_documents')
@@ -66,15 +65,17 @@ export default function MyLoanDashboard() {
           setApplications(mappedApps);
         }
 
-        // 3. Fetch Business Loan applications (business_loans table)
+        // Fetch Business Loan applications (Removed funding_amount to fix 400 Bad Request)
         const { data: bizData, error: bizError } = await supabase
           .from('business_loans')
-          .select('id, created_at, status, legal_business_name, funding_amount')
+          .select('id, created_at, status, legal_business_name')
           .eq('email', user.email)
           .order('created_at', { ascending: false });
 
         if (!bizError && bizData) {
           setBusinessApplications(bizData);
+        } else if (bizError) {
+          console.warn("Business loans fetch bypassed. Verify table schema.", bizError);
         }
       }
 
@@ -183,7 +184,7 @@ export default function MyLoanDashboard() {
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Business Name</p>
                             <h3 className="text-2xl font-bold text-brand-dark mb-1">{app.legal_business_name || 'N/A'}</h3>
                             <p className="text-slate-500 text-sm font-medium">
-                              Requested: <span className="text-slate-800">${Number(app.funding_amount).toLocaleString()}</span> • Submitted {formatDate(app.created_at)}
+                              Submitted {formatDate(app.created_at)}
                             </p>
                           </div>
                         </div>
@@ -233,7 +234,12 @@ export default function MyLoanDashboard() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => router.push(`/userjourney?id=${app.id}`)}
+                            onClick={() => {
+                              // ACTION-ORIENTED FIX: Clear the lockout before routing
+                              localStorage.removeItem('currentApplicationId');
+                              sessionStorage.setItem('activeBorrowerId', app.id);
+                              router.push(`/userjourney?id=${app.id}`);
+                            }}
                             className="bg-white text-brand-dark px-6 py-3 rounded-md text-sm font-bold flex items-center justify-between min-w-[200px] h-[48px] hover:bg-slate-100 transition-colors shadow-lg"
                           >
                             <ChevronRight size={18} className="text-slate-400" /> RESUME
@@ -242,7 +248,7 @@ export default function MyLoanDashboard() {
 
                         <button
                           onClick={() => {
-                            localStorage.setItem('currentApplicationId', app.id);
+                            localStorage.removeItem('currentApplicationId');
                             sessionStorage.setItem('activeBorrowerId', app.id);
                             router.push(`/userjourney/documents?id=${app.id}`);
                           }}
@@ -292,59 +298,6 @@ export default function MyLoanDashboard() {
         isOpen={isLoanModalOpen}
         onClose={() => setIsLoanModalOpen(false)}
       />
-
-      {/* LOAN SELECTION MODAL */}
-      {/* {isLoanModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[500px] overflow-hidden animate-in zoom-in-95 duration-200">
-
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-[22px] font-bold text-slate-900 tracking-tight">What kind of loan are you looking for?</h2>
-              <button
-                onClick={() => setIsLoanModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 transition-colors bg-slate-50 hover:bg-slate-100 p-2 rounded-full"
-              >
-                <X size={20} strokeWidth={2.5} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <button
-                onClick={startBusinessApplication}
-                className="w-full bg-[#042f24] text-white p-4 rounded-xl flex items-center gap-4 hover:bg-[#0a6c50] hover:-translate-y-0.5 transition-all shadow-md shadow-[#042f24]/10"
-              >
-                <Home size={22} className="opacity-90" strokeWidth={1.5} />
-                <span className="font-semibold text-lg tracking-wide">Business Loan</span>
-              </button>
-
-              <button
-                onClick={startNewStandardApplication}
-                className="w-full bg-[#042f24] text-white p-4 rounded-xl flex items-center gap-4 hover:bg-[#0a6c50] hover:-translate-y-0.5 transition-all shadow-md shadow-[#042f24]/10"
-              >
-                <Home size={22} className="opacity-90" strokeWidth={1.5} />
-                <span className="font-semibold text-lg tracking-wide">Commercial Property</span>
-              </button>
-
-              <button
-                onClick={startNewStandardApplication}
-                className="w-full bg-[#042f24] text-white p-4 rounded-xl flex items-center gap-4 hover:bg-[#0a6c50] hover:-translate-y-0.5 transition-all shadow-md shadow-[#042f24]/10"
-              >
-                <Timer size={22} className="opacity-90" strokeWidth={1.5} />
-                <span className="font-semibold text-lg tracking-wide">Investment Property</span>
-              </button>
-
-              <button
-                onClick={startNewStandardApplication}
-                className="w-full bg-[#042f24] text-white p-4 rounded-xl flex items-center gap-4 hover:bg-[#0a6c50] hover:-translate-y-0.5 transition-all shadow-md shadow-[#042f24]/10"
-              >
-                <Building size={22} className="opacity-90" strokeWidth={1.5} />
-                <span className="font-semibold text-lg tracking-wide">Construction Property</span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )} */}
     </div>
   );
 }
