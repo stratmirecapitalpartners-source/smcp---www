@@ -225,12 +225,12 @@ function PartnerForm() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Referred Partner Name (Optional)</label>
-                            <input type="text" name="referredPartnerName" value={formData.referredPartnerName} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="John Doe" />
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Referred Partner Name </label>
+                            <input type="text" name="referredPartnerName" required value={formData.referredPartnerName} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="John Doe" />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Partner Code (Optional)</label>
-                            <input type="text" name="referredPartnerCode" value={formData.referredPartnerCode} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="CODE123" />
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Partner Code</label>
+                            <input type="text" name="referredPartnerCode" required value={formData.referredPartnerCode} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a6c50] outline-none bg-slate-50 focus:bg-white transition-all" placeholder="CODE123" />
                         </div>
                     </div>
                 </section>
