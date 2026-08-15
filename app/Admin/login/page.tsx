@@ -36,13 +36,13 @@ export default function AdminLogin() {
                     if (profileError) throw profileError;
 
                     // 3. Because Supabase auto-logs in on signup, push straight to dashboard
-                    router.push('/admin');
+                    router.push('/Admin');
                 }
             } else {
                 // Log In
                 const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
                 if (loginError) throw loginError;
-                router.push('/admin');
+                router.push('/Admin');
             }
         } catch (err: any) {
             setError(err.message);
