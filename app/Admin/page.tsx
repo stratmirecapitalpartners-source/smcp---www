@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/admin/login'); return; }
+      if (!user) { router.push('/Admin/login'); return; }
 
       const { data: profile } = await supabase.from('admin_profiles').select('*').eq('id', user.id).single();
       if (!profile || profile.status !== 'approved') setAdminProfile(profile || { status: 'pending' });
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/admin/login');
+    router.push('/Admin/login');
   };
 
   if (isAuthLoading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-500">Verifying Credentials...</div>;
