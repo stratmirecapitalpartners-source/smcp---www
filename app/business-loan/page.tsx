@@ -44,7 +44,8 @@ export default function BusinessLoanPage() {
         // Step 4: Preferences
         fundsTiming: "",
         importantFactor: "",
-        source: ""
+        source: "",
+        referredPartnerName: "" // Added new state for partner name
     })
 
     const [interests, setInterests] = useState<string[]>([])
@@ -107,7 +108,9 @@ export default function BusinessLoanPage() {
             interests: interests,
             funds_timing: formData.fundsTiming,
             important_factor: formData.importantFactor,
-            source: formData.source
+            source: formData.source,
+            // Only send the partner name if they actually selected that source option
+            referred_partner_name: formData.source === "Reffered by a partner / Consultant" ? formData.referredPartnerName : null
         }
 
         // 2. Execute the insert
@@ -379,6 +382,22 @@ export default function BusinessLoanPage() {
                                     <option value="Reffered by a partner / Consultant">Referred by a partner / Consultant</option>
                                 </select>
                             </Field>
+
+                            {/* CONDITIONAL RENDER: Partner Name Field */}
+                            {formData.source === "Reffered by a partner / Consultant" && (
+                                <Field className="max-w-md space-y-2 pt-4">
+                                    <FieldLabel htmlFor="biz-referred-partner-name" className="font-semibold text-slate-700">Referred Partner Name <span className="text-red-500">*</span></FieldLabel>
+                                    <Input
+                                        id="biz-referred-partner-name"
+                                        required
+                                        className={inputBaseStyles}
+                                        value={formData.referredPartnerName}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter partner name"
+                                    />
+                                </Field>
+                            )}
+
                         </div>
 
                         <div className="pt-10 flex items-center justify-between border-t border-slate-200 mt-10">

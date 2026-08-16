@@ -59,6 +59,9 @@ export default function BusinessLoanReviewModal({ loan, onClose }: BusinessLoanR
                             <DataField label="Email Address" value={loan.email} />
                             <DataField label="Phone Number" value={loan.phone} />
                         </div>
+                        {loan.referred_partner_name && (
+                            <DataField label="Referred By Partner" value={loan.referred_partner_name} className="md:col-span-3 bg-emerald-50 p-3 rounded-lg border border-emerald-100" />
+                        )}
                     </section>
 
                     {/* Business Entity details */}
